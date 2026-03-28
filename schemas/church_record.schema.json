@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/church_record.schema.json",
+  "title": "ChurchRecord",
+  "description": "A record representing a church or faith-based organisation participating in the BibleFi ecosystem, including its on-chain identity and treasury details.",
+  "type": "object",
+  "required": ["record_id", "schema_version", "name", "denomination", "location", "contact"],
+  "additionalProperties": false,
+  "properties": {
+    "record_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique identifier for this church record."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the ChurchRecord schema (e.g. '1.0.0').",
+      "examples": ["1.0.0"]
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Legal or commonly known name of the church or organisation."
+    },
+    "denomination": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Denominational affiliation (e.g. 'Baptist', 'Catholic', 'Non-denominational').",
+      "examples": ["Baptist", "Catholic", "Methodist", "Pentecostal", "Non-denominational"]
+    },
+    "location": {
+      "type": "object",
+      "required": ["country"],
+      "additionalProperties": false,
+      "description": "Physical or registered location of the church.",
+      "properties": {
+        "street_address": {
+          "type": "string",
+          "description": "Street address line."
+        },
+        "city": {
+          "type": "string",
+          "description": "City or municipality."
+        },
+        "state_province": {
+          "type": "string",
+          "description": "State, province, or region."
+        },
+        "postal_code": {
+          "type": "string",
+          "description": "Postal or ZIP code."
+        },
+        "country": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$",
+          "description": "ISO 3166-1 alpha-2 country code (e.g. 'US', 'GB', 'NG').",
+          "examples": ["US", "GB", "NG", "BR", "KE"]
+        },
+        "coordinates": {
+          "type": "object",
+          "required": ["latitude", "longitude"],
+          "additionalProperties": false,
+          "description": "GPS coordinates for map-based discovery.",
+          "properties": {
+            "latitude": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            },
+            "longitude": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            }
+          }
+        }
+      }
+    },
+    "contact": {
+      "type": "object",
+      "required": ["email"],
+      "additionalProperties": false,
+      "description": "Primary contact information.",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Primary contact email address."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number in E.164 format (e.g. '+12025550123').",
+          "pattern": "^\\+[1-9]\\d{1,14}$"
+        },
+        "website": {
+          "type": "string",
+          "format": "uri",
+          "description": "Official website URL."
+        },
+        "social_handles": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Map of social platform name to handle (e.g. {'twitter': '@mychurch'})."
+        }
+      }
+    },
+    "on_chain_identity": {
+      "type": "object",
+      "description": "Blockchain identity and treasury information.",
+      "required": ["wallet_address"],
+      "additionalProperties": false,
+      "properties": {
+        "wallet_address": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$",
+          "description": "Primary EVM-compatible wallet address of the church treasury."
+        },
+        "ens_name": {
+          "type": "string",
+          "description": "Optional ENS or other human-readable name for the wallet (e.g. 'mychurch.eth')."
+        },
+        "multisig_address": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$",
+          "description": "Optional Gnosis Safe or other multi-signature wallet address."
+        },
+        "chain_ids": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "uniqueItems": true,
+          "description": "EVM chain IDs on which this church is registered or active."
+        }
+      }
+    },
+    "membership_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Approximate number of registered members or congregants."
+    },
+    "founded_year": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Year the church or organisation was founded."
+    },
+    "verified": {
+      "type": "boolean",
+      "description": "Whether this church record has been verified by the BibleFi network.",
+      "default": false
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true,
+      "description": "Optional classification or discovery tags (e.g. 'missions', 'youth-ministry', 'food-bank')."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when this record was created."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when this record was last updated."
+    }
+  }
+}

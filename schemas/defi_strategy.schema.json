@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/defi_strategy.schema.json",
+  "title": "DeFiStrategy",
+  "description": "Describes a decentralised-finance yield or staking strategy configured by a church or individual participant in the BibleFi protocol.",
+  "type": "object",
+  "required": ["strategy_id", "schema_version", "name", "protocol", "asset", "allocation", "risk_tier"],
+  "additionalProperties": false,
+  "properties": {
+    "strategy_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique identifier for this DeFi strategy."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the DeFiStrategy schema (e.g. '1.0.0').",
+      "examples": ["1.0.0"]
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable name for this strategy."
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional free-text description of the strategy's purpose and mechanics."
+    },
+    "protocol": {
+      "type": "object",
+      "required": ["name", "contract_address", "chain_id"],
+      "additionalProperties": false,
+      "description": "The DeFi protocol this strategy interacts with.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Protocol name (e.g. 'Aave', 'Compound', 'Uniswap', 'BibleFi-Vault').",
+          "examples": ["Aave", "Compound", "Uniswap v3", "BibleFi-Vault"]
+        },
+        "contract_address": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$",
+          "description": "Primary smart contract address of the protocol on the target chain."
+        },
+        "chain_id": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "EVM chain ID where the protocol is deployed."
+        },
+        "abi_uri": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional URI pointing to the ABI JSON for this contract."
+        }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "required": ["symbol", "contract_address", "decimals"],
+      "additionalProperties": false,
+      "description": "The token or asset being deposited into the strategy.",
+      "properties": {
+        "symbol": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Token ticker symbol (e.g. 'USDC', 'ETH', 'BFI').",
+          "examples": ["USDC", "USDT", "ETH", "WBTC", "BFI"]
+        },
+        "contract_address": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$",
+          "description": "ERC-20 contract address. Use the zero address (0x000...000) for native ETH."
+        },
+        "decimals": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18,
+          "description": "Number of decimal places the token uses."
+        },
+        "coingecko_id": {
+          "type": "string",
+          "description": "Optional CoinGecko token ID for price feed lookups."
+        }
+      }
+    },
+    "allocation": {
+      "type": "object",
+      "required": ["percentage"],
+      "additionalProperties": false,
+      "description": "How much of the available treasury balance should be allocated to this strategy.",
+      "properties": {
+        "percentage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Percentage of the total portfolio or treasury to allocate (0–100)."
+        },
+        "min_amount_usd": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Optional minimum USD value that must be allocated for the strategy to activate."
+        },
+        "max_amount_usd": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Optional maximum USD cap on the allocation."
+        }
+      }
+    },
+    "risk_tier": {
+      "type": "string",
+      "enum": ["conservative", "moderate", "aggressive"],
+      "description": "Risk classification of this strategy. Churches and users should select tiers aligned with their stewardship values."
+    },
+    "expected_apy": {
+      "type": "object",
+      "required": ["min", "max"],
+      "additionalProperties": false,
+      "description": "Expected annual percentage yield range based on historical or projected data.",
+      "properties": {
+        "min": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Minimum expected APY (as a percentage, e.g. 3.5 for 3.5%)."
+        },
+        "max": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Maximum expected APY."
+        }
+      }
+    },
+    "tithe_allocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional automatic tithe distribution from yield generated by this strategy.",
+      "required": ["percentage", "recipient_address"],
+      "properties": {
+        "percentage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Percentage of yield automatically tithed (0–100)."
+        },
+        "recipient_address": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$",
+          "description": "Wallet or contract address that receives the tithe."
+        }
+      }
+    },
+    "rebalance_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Rules governing when and how the strategy is rebalanced.",
+      "properties": {
+        "trigger": {
+          "type": "string",
+          "enum": ["drift", "time", "manual"],
+          "description": "'drift' rebalances when allocation drifts beyond threshold; 'time' rebalances on a schedule; 'manual' requires explicit action."
+        },
+        "drift_threshold_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Percentage drift from target allocation that triggers rebalancing (when trigger='drift')."
+        },
+        "interval_hours": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Hours between automatic rebalances (when trigger='time')."
+        }
+      }
+    },
+    "active": {
+      "type": "boolean",
+      "description": "Whether this strategy is currently active and accepting deposits.",
+      "default": true
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true,
+      "description": "Optional tags for categorisation (e.g. 'stablecoin', 'lending', 'liquidity-provision')."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when this strategy was created."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when this strategy was last updated."
+    }
+  }
+}
