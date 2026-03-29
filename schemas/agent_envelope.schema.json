@@ -1,1 +1,103 @@
-
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/agent_envelope.schema.json",
+  "title": "AgentEnvelope",
+  "description": "Universal wrapper for all BibleFi agent messages and records. Every payload transmitted between agents or stored on-chain must be wrapped in this envelope.",
+  "type": "object",
+  "required": ["envelope_id", "schema_version", "created_at", "payload_type", "payload"],
+  "additionalProperties": false,
+  "properties": {
+    "envelope_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique identifier for this envelope (UUID v4)."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the AgentEnvelope schema used (e.g. '1.0.0').",
+      "examples": ["1.0.0"]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when the envelope was created."
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Optional ISO 8601 UTC timestamp after which the envelope should be considered expired."
+    },
+    "payload_type": {
+      "type": "string",
+      "enum": [
+        "scripture_record",
+        "church_record",
+        "defi_strategy",
+        "security_finding",
+        "wallet_record",
+        "user_profile",
+        "generic"
+      ],
+      "description": "Discriminator indicating which schema governs the contents of the 'payload' field."
+    },
+    "payload": {
+      "type": "object",
+      "description": "The actual data payload. Must conform to the schema identified by 'payload_type'."
+    },
+    "sender": {
+      "type": "object",
+      "description": "Identity of the agent or system that produced this envelope.",
+      "required": ["agent_id"],
+      "additionalProperties": false,
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "description": "Unique identifier of the sending agent or service."
+        },
+        "agent_type": {
+          "type": "string",
+          "description": "Human-readable type label for the sender (e.g. 'scripture-indexer', 'defi-oracle')."
+        },
+        "wallet_address": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$",
+          "description": "Optional EVM-compatible wallet address of the sender."
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "description": "Optional cryptographic signature over the canonical JSON of the payload.",
+      "required": ["algorithm", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "enum": ["ed25519", "secp256k1", "ES256"],
+          "description": "Signing algorithm used."
+        },
+        "value": {
+          "type": "string",
+          "description": "Base64url-encoded signature bytes."
+        },
+        "public_key": {
+          "type": "string",
+          "description": "Base64url-encoded public key corresponding to the signing key."
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true,
+      "description": "Optional free-form tags for filtering, routing, or indexing."
+    },
+    "correlation_id": {
+      "type": "string",
+      "description": "Optional identifier linking this envelope to a broader workflow or request chain."
+    }
+  }
+}

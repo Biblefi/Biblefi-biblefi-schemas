@@ -1,1 +1,205 @@
-
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/security_finding.schema.json",
+  "title": "SecurityFinding",
+  "description": "A security audit or automated scan finding related to a BibleFi smart contract, protocol component, or agent. Used to track vulnerabilities from discovery through remediation.",
+  "type": "object",
+  "required": ["finding_id", "schema_version", "title", "severity", "status", "target", "discovered_at"],
+  "additionalProperties": false,
+  "properties": {
+    "finding_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique identifier for this security finding."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the SecurityFinding schema (e.g. '1.0.0').",
+      "examples": ["1.0.0"]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Short, descriptive title for the finding."
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the vulnerability or issue."
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["critical", "high", "medium", "low", "informational"],
+      "description": "Severity classification. 'critical' represents findings that can lead to immediate, catastrophic loss of funds or protocol compromise."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["open", "in_progress", "resolved", "accepted_risk", "false_positive"],
+      "description": "Current remediation status of the finding."
+    },
+    "target": {
+      "type": "object",
+      "required": ["type", "identifier"],
+      "additionalProperties": false,
+      "description": "The component or artefact affected by this finding.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["smart_contract", "agent", "api", "schema", "infrastructure", "dependency"],
+          "description": "Category of the affected component."
+        },
+        "identifier": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique identifier for the target. For smart contracts, use the contract address; for agents, use the agent ID; for schemas, use the $id URI."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name of the affected component."
+        },
+        "chain_id": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "EVM chain ID if the target is a deployed smart contract."
+        },
+        "file_path": {
+          "type": "string",
+          "description": "Relative file path within the repository, if applicable."
+        },
+        "line_range": {
+          "type": "object",
+          "required": ["start"],
+          "additionalProperties": false,
+          "description": "Source code line range where the issue was found.",
+          "properties": {
+            "start": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "end": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "cwe_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^CWE-\\d+$"
+      },
+      "uniqueItems": true,
+      "description": "Common Weakness Enumeration identifiers applicable to this finding (e.g. ['CWE-89', 'CWE-20'])."
+    },
+    "cvss": {
+      "type": "object",
+      "required": ["version", "score"],
+      "additionalProperties": false,
+      "description": "Optional CVSS score details.",
+      "properties": {
+        "version": {
+          "type": "string",
+          "enum": ["3.0", "3.1", "4.0"],
+          "description": "CVSS version used."
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Base score (0.0–10.0)."
+        },
+        "vector": {
+          "type": "string",
+          "description": "Full CVSS vector string (e.g. 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H')."
+        }
+      }
+    },
+    "proof_of_concept": {
+      "type": "string",
+      "description": "Optional code snippet, transaction hash, or narrative demonstrating exploitability."
+    },
+    "recommendation": {
+      "type": "string",
+      "description": "Suggested remediation steps or mitigation strategies."
+    },
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uri"
+      },
+      "description": "External URLs to relevant advisories, write-ups, or documentation."
+    },
+    "discovered_by": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Identity of the auditor or tool that discovered the finding.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the individual, firm, or automated tool."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["manual_audit", "automated_scan", "bug_bounty", "internal_review"],
+          "description": "How the finding was discovered."
+        },
+        "contact": {
+          "type": "string",
+          "description": "Email, GitHub handle, or other contact details for the discoverer."
+        }
+      }
+    },
+    "resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Details of how and when the finding was resolved.",
+      "properties": {
+        "summary": {
+          "type": "string",
+          "description": "Description of the fix or accepted-risk rationale."
+        },
+        "commit_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{7,64}$",
+          "description": "Git commit hash where the fix was introduced."
+        },
+        "tx_hash": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$",
+          "description": "On-chain transaction hash if the fix required a contract upgrade or migration."
+        },
+        "resolved_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 UTC timestamp when the finding was resolved."
+        },
+        "resolved_by": {
+          "type": "string",
+          "description": "Name or identifier of the person or team that resolved the finding."
+        }
+      }
+    },
+    "discovered_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when the finding was first identified."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when this record was last updated."
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true,
+      "description": "Optional tags for classification or filtering (e.g. 'reentrancy', 'access-control', 'oracle-manipulation')."
+    }
+  }
+}
