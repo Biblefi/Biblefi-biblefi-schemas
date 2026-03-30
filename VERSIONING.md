@@ -7,6 +7,7 @@
 | Schema | Version | Status |
 |---|---|---|
 | `scripture_record` | `2.0.0` | Stable |
+| `scripture_record` | `2.1.0` | Stable |
 | `agent_envelope` | `1.0.0` | Stable |
 | `church_record` | `1.0.0` | Stable |
 | `defi_strategy` | `1.0.0` | Stable |
@@ -17,3 +18,5 @@
 | Schema | Version | Retained Until | Replacement |
 |---|---|---|---|
 | `scripture_record` (v1) | `1.0.0` | 2028-03 | `scripture_record` v2.0.0 |
+
+> **Note:** `scripture_record` v2.0.0 remains Stable and is not deprecated. v2.1.0 is a non-breaking minor upgrade — all v2.0.0 documents remain valid under v2.1.0.

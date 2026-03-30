@@ -310,3 +310,172 @@ npm install ajv ajv-formats
 ```
 
 > **Note:** Use `ajv/dist/2020.js` to load the JSON Schema Draft 2020-12 validator. The default `ajv` export targets Draft-07.
+
+---
+
+## v2.1.0 New Sections
+
+All sections added in v2.1.0 are **optional** and non-breaking. Existing v2.0.0 documents are fully valid under v2.1.0. The `$id` has been updated to `https://schemas.biblefi.io/v2.1/scripture_record.schema.json`.
+
+---
+
+### 1. `canonical_graph`
+
+The `canonical_graph` section encodes a **directed acyclic graph (DAG)** of theological dependencies for a passage — which passages it presupposes (`depends_on`) and which passages presuppose it (`depended_on_by`).
+
+**PageRank-weighted canonical authority scoring:**
+
+Each directed edge carries a `weight` (0.0–1.0) representing the strength of the theological dependency. The BibleFi corpus-level graph can be processed with a weighted PageRank algorithm where edge weights scale the probability of traversal. After convergence (typically ~50–100 iterations), each passage receives a `pagerank_score` representing its relative canonical authority within the corpus.
+
+**Tarjan SCC detection:**
+
+The `strongly_connected_component_id` field records the result of Tarjan's Strongly Connected Components algorithm run over the full corpus DAG. A non-trivial SCC (with more than one node) indicates a **circular doctrinal dependency** — for example, two passages each citing the other as a theological presupposition. These are automatically flagged for theological review.
+
+**Kahn's algorithm topological ordering:**
+
+The `topological_sort_index` records the passage's position in a Kahn's algorithm topological sort of the full canon DAG (excluding cycles). This produces a valid dependency-respecting study or preaching order — lower indices represent foundational passages that should be understood before later ones.
+
+---
+
+### 2. `zero_knowledge_proofs`
+
+The `zero_knowledge_proofs` section enables **privacy-preserving content membership proofs** — a user can prove that a passage belongs to a given canonical corpus (e.g., the Protestant 66-book Bible) without revealing which passage it is.
+
+**How Poseidon-hash commitments + Groth16 proofs work:**
+
+1. A Poseidon hash `commitment` is computed over the sensitive passage fields.
+2. A Groth16 (or other system's) proof is generated off-chain using the `commitment` as a private witness and the corpus Merkle root as a public input.
+3. On-chain, the `verifier_contract_address` verifies the proof against the `public_inputs` without learning which passage was committed.
+
+**Poseidon commitment pseudo-code:**
+
+```js
+// Poseidon commitment (pseudo-code)
+const commitment = poseidon([
+  BigInt(record.chapter),
+  BigInt(record.verses),
+  BigInt('0x' + record.content_hash.slice(2))
+]);
+```
+
+The `nullifier` prevents double-use of a proof in on-chain contexts (e.g., to prevent proving membership twice for the same passage in a zero-knowledge airdrop).
+
+---
+
+### 3. `liturgical_schedule` and `biblefi_rrule`
+
+The `liturgical_schedule` section maps a passage to its occurrences in liturgical calendars across ten Christian traditions, from the Roman Rite to Anabaptist communities.
+
+**Example — John 3:16 in the Revised Common Lectionary:**
+
+John 3:16 appears as the Gospel reading on the Fourth Sunday of Lent in Year B of the Revised Common Lectionary:
+
+```json
+"liturgical_schedule": {
+  "lectionary_occurrences": [
+    {
+      "tradition": "revised_common_lectionary",
+      "cycle": "year_b",
+      "sunday_or_feast": "Lent 4",
+      "liturgical_season": "lent",
+      "role": "gospel",
+      "is_primary_reading": true,
+      "canonical_color": "purple"
+    }
+  ]
+}
+```
+
+**The `biblefi_rrule` custom recurrence rule:**
+
+The `biblefi_rrule` object extends iCalendar RRULE with liturgical-calendar awareness. The `freq` values are purpose-built for liturgical recurrence patterns:
+
+- `LITURGICAL_WEEKLY` — recurs on a fixed day within a liturgical week
+- `LITURGICAL_ANNUAL` — recurs annually on the same feast or Sunday
+- `FEAST_DAY` — tied to a moveable feast (e.g., Easter, Pentecost)
+- `DAILY_OFFICE` — appears in a daily office lectionary
+- `LECTIO_CONTINUA` — part of a continuous sequential reading
+
+The `by_season` filter restricts recurrence to specific liturgical seasons, and `tradition_filter` limits the rule to specific traditions.
+
+---
+
+### 4. `temporal_integrity`
+
+The `temporal_integrity` section tracks **content freshness** and surfaces **staleness signals** using a configurable decay model.
+
+**Half-life decay algorithm:**
+
+When `decay_model` is `"half_life"`, the `trust_decay_score` is computed as:
+
+```
+trust_decay_score = 0.5 ^ ((now - last_verified_at) / half_life_days)
+is_stale = trust_decay_score < 0.2
+```
+
+For example, with `half_life_days: 365`, a passage verified today has `trust_decay_score = 1.0`. After one year it drops to `0.5`, after two years to `0.25`, and after ~2.32 years it falls below the staleness threshold of `0.2`.
+
+The `drift_detected` flag is set to `true` when the current `content_hash` differs from `source_content_hash_at_last_verification` — indicating the passage text may have been tampered with or corrected since the last authoritative verification.
+
+---
+
+### 5. `interoperability_links`
+
+The `interoperability_links` section provides **typed cross-schema references** to other BibleFi records and external ontologies.
+
+**OSIS reference example — John 3:16:**
+
+In the Open Scripture Information Standard (OSIS) namespace, John 3:16 is identified as:
+
+```json
+{
+  "ontology": "osis",
+  "identifier": "John.3.16",
+  "equivalence_type": "exact_match"
+}
+```
+
+Other supported ontologies include `bibframe`, `wikidata` (e.g., Q-numbers), `usfm`, `logos_bible_software`, and `faithlife`.
+
+The `defi_strategy_refs` array allows DeFi strategy records to cite the theological basis (e.g., stewardship principles from Malachi 3:10 informing a tithe mechanics contract) directly within the ScriptureRecord.
+
+---
+
+### 6. `oral_tradition`
+
+The `oral_tradition` section captures **pre-textual oral transmission metadata** — essential for form-critical and tradition-history analysis.
+
+John 3:16, for example, is widely considered to derive from a **Johannine community liturgical formula** — a confession of faith circulating in the Johannine churches before the final redaction of the Gospel:
+
+```json
+"oral_tradition": {
+  "transmission_form": "liturgical_formula",
+  "sitz_im_leben": "Early Johannine community worship and baptismal confession",
+  "mnemonic_devices": ["chiasm", "parallelism"],
+  "estimated_oral_period": {
+    "earliest_bce_ce": "50",
+    "latest_bce_ce": "90",
+    "confidence": "moderate"
+  }
+}
+```
+
+The `redaction_stages` array allows recording multiple layers of tradition history — for example, a Pentateuchal passage may have J-source, E-source, and Deuteronomistic redaction stages, each with its own scholarly consensus rating.
+
+---
+
+### 7. `computational_linguistics`
+
+The `computational_linguistics` section provides deep NLP and computational Bible scholarship fields.
+
+**Hapax legomena:**
+
+The `hapax_legomena` array records words appearing only once in the entire corpus. These are critical for translation studies because a word's meaning cannot be determined by comparing other uses — translators must rely solely on context, cognate languages, or ancient versions. Flagging hapax legomena in the schema ensures that translation integrity checks can apply extra scrutiny to these high-uncertainty tokens.
+
+**Lexical alignment:**
+
+The `lexical_alignment` array provides token-level alignment between the source language (Hebrew or Greek) and the translated text. Each alignment entry specifies the `source_token`, its Strong's ID, the corresponding `target_tokens` in the translation, the `alignment_type` (e.g., `one_to_many` for a single Greek word expanded into several English words), and a `confidence` score. This data enables automated translation consistency checking across the full translation graph.
+
+**Discourse structure:**
+
+The `discourse_structure` field records the RST (Rhetorical Structure Theory) relation of the passage to its immediate textual context. For example, John 3:16 functions as a `cause_effect` elaboration following Jesus' cryptic statement about the Son of Man being lifted up in John 3:14–15.

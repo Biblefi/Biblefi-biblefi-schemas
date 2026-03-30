@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/v1/validation_algorithm.schema.json",
+  "title": "ValidationAlgorithm",
+  "description": "v1.0.0 — Meta-schema describing the BibleFi canonical validation pipeline. Defines the schema for validation algorithm configurations that can be applied to any ScriptureRecord or other BibleFi schema instance.",
+  "type": "object",
+  "required": ["pipeline_id", "pipeline_version", "target_schema_id", "steps"],
+  "additionalProperties": false,
+  "properties": {
+    "pipeline_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique identifier for this validation pipeline configuration."
+    },
+    "pipeline_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of this pipeline configuration (e.g. '1.0.0')."
+    },
+    "target_schema_id": {
+      "type": "string",
+      "format": "uri",
+      "description": "The $id of the JSON Schema being validated by this pipeline (e.g. 'https://schemas.biblefi.io/v2.1/scripture_record.schema.json')."
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of this validation pipeline's purpose."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ordered list of validation steps. Steps are executed in array order unless depends_on_steps introduces a DAG ordering.",
+      "items": {
+        "type": "object",
+        "required": ["step_id", "step_type", "is_required", "fail_action"],
+        "additionalProperties": false,
+        "properties": {
+          "step_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Unique identifier for this step within the pipeline (used in depends_on_steps references)."
+          },
+          "step_type": {
+            "type": "string",
+            "enum": [
+              "json_schema_validation",
+              "content_hash_verification",
+              "merkle_proof_verification",
+              "zk_proof_verification",
+              "temporal_integrity_check",
+              "canonical_graph_cycle_detection",
+              "cross_reference_resolution",
+              "inter_schema_link_resolution",
+              "embedding_cosine_threshold",
+              "sentiment_bounds_check",
+              "custom_wasm_predicate"
+            ],
+            "description": "The type of validation operation to perform."
+          },
+          "is_required": {
+            "type": "boolean",
+            "description": "Whether this step is mandatory. If false, failures produce warnings only unless fail_action overrides."
+          },
+          "fail_action": {
+            "type": "string",
+            "enum": ["reject", "warn", "quarantine", "flag_for_review"],
+            "description": "Action to take when this step fails."
+          },
+          "config": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Step-specific configuration. Schema is determined by step_type."
+          },
+          "depends_on_steps": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true,
+            "description": "step_id values that must complete successfully before this step runs. Enables DAG-ordered execution."
+          },
+          "timeout_ms": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Maximum execution time for this step in milliseconds."
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of what this step validates."
+          }
+        }
+      }
+    },
+    "output_format": {
+      "type": "string",
+      "enum": ["jsonld_vc", "eas_attestation", "simple_bool", "structured_report"],
+      "description": "Format of the pipeline's validation output."
+    },
+    "circuit_bindings": {
+      "type": "array",
+      "description": "Bindings from ZK circuit identifiers to the pipeline steps that use them.",
+      "items": {
+        "type": "object",
+        "required": ["circuit_id", "step_id"],
+        "additionalProperties": false,
+        "properties": {
+          "circuit_id": {
+            "type": "string",
+            "description": "Identifier of the ZK circuit (matches zero_knowledge_proofs.circuit_id in ScriptureRecord)."
+          },
+          "step_id": {
+            "type": "string",
+            "description": "The pipeline step_id of the zk_proof_verification step that uses this circuit."
+          },
+          "verification_key_uri": {
+            "type": "string",
+            "format": "uri",
+            "description": "URI from which the circuit verification key can be fetched."
+          },
+          "proof_system": {
+            "type": "string",
+            "enum": ["groth16", "plonk", "fflonk", "stark", "bulletproofs", "nova", "halo2"],
+            "description": "ZK proof system used by this circuit."
+          }
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true,
+      "description": "Free-form tags for pipeline discovery and categorization."
+    }
+  }
+}

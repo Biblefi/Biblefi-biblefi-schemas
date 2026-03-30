@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.biblefi.io/v2/scripture_record.schema.json",
+  "$id": "https://schemas.biblefi.io/v2.1/scripture_record.schema.json",
   "title": "ScriptureRecord",
-  "description": "v2.0.0 — Canonical reference to a Bible passage with cryptographic content hashing, AI metadata, hermeneutics, cross-references, multi-chain attestations, and full provenance tracking.",
+  "description": "v2.1.0 — Canonical reference to a Bible passage with cryptographic content hashing, AI metadata, hermeneutics, cross-references, multi-chain attestations, full provenance tracking, canonical graph, zero-knowledge proofs, liturgical schedule, temporal integrity, interoperability links, oral tradition, and computational linguistics.",
   "type": "object",
   "required": ["record_id", "schema_version", "book", "chapter", "verses", "translation", "text", "content_hash"],
   "additionalProperties": false,
@@ -15,8 +15,8 @@
     "schema_version": {
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+$",
-      "description": "Semantic version of the ScriptureRecord schema (e.g. '2.0.0').",
-      "examples": ["2.0.0"]
+      "description": "Semantic version of the ScriptureRecord schema (e.g. '2.1.0').",
+      "examples": ["2.0.0", "2.1.0"]
     },
     "book": {
       "type": "string",
@@ -427,6 +427,371 @@
           },
           "diff_summary": { "type": "string" },
           "reviewed_by": { "type": "string" }
+        }
+      }
+    },
+    "canonical_graph": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "depends_on": {
+          "description": "Passages this verse logically/theologically presupposes.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["record_ref", "dependency_type", "weight"],
+            "additionalProperties": false,
+            "properties": {
+              "record_ref": { "type": "string", "format": "uri", "description": "URI of the depended-upon ScriptureRecord ($id)." },
+              "dependency_type": { "type": "string", "enum": ["exegetical", "typological", "doctrinal", "narrative_sequence", "lexical", "intertextual"] },
+              "weight": { "type": "number", "minimum": 0.0, "maximum": 1.0, "description": "Edge weight for PageRank-style canonical authority scoring." },
+              "notes": { "type": "string" }
+            }
+          }
+        },
+        "depended_on_by": {
+          "description": "Passages that presuppose this one.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["record_ref", "dependency_type", "weight"],
+            "additionalProperties": false,
+            "properties": {
+              "record_ref": { "type": "string", "format": "uri" },
+              "dependency_type": { "type": "string", "enum": ["exegetical", "typological", "doctrinal", "narrative_sequence", "lexical", "intertextual"] },
+              "weight": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+            }
+          }
+        },
+        "transitive_closure_depth": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Pre-computed BFS depth of reachable canonical dependencies."
+        },
+        "pagerank_score": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Canonical authority score derived from weighted PageRank over the full corpus graph."
+        },
+        "strongly_connected_component_id": {
+          "type": "string",
+          "description": "Identifier of the Tarjan SCC this node belongs to (cycles indicate circular doctrinal structures — flagged for review)."
+        },
+        "topological_sort_index": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Position in the Kahn's-algorithm topological ordering of the full canon DAG."
+        }
+      }
+    },
+    "zero_knowledge_proofs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "circuit_id": { "type": "string", "description": "Identifier of the ZK circuit used (e.g., 'biblefi-poseidon-v1')." },
+        "proof_system": {
+          "type": "string",
+          "enum": ["groth16", "plonk", "fflonk", "stark", "bulletproofs", "nova", "halo2"],
+          "description": "ZK proof system used."
+        },
+        "verification_key_hash": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$",
+          "description": "Keccak-256 of the serialized verification key."
+        },
+        "proof_bytes": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]+$",
+          "description": "Hex-encoded serialized proof."
+        },
+        "public_inputs": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^0x[0-9a-fA-F]+$" },
+          "description": "Public inputs to the circuit (e.g., commitment to corpus Merkle root)."
+        },
+        "commitment": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$",
+          "description": "Poseidon hash commitment to the record fields used in the circuit."
+        },
+        "nullifier": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$",
+          "description": "Unique nullifier to prevent double-use of a proof in on-chain contexts."
+        },
+        "membership_corpus": {
+          "type": "string",
+          "enum": ["protestant_66", "catholic_73", "orthodox_81", "ethiopian_81", "samaritan_pentateuch", "deuterocanon", "apocrypha"],
+          "description": "Canonical corpus the membership proof is for."
+        },
+        "verified_at": { "type": "string", "format": "date-time" },
+        "verifier_contract_address": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$"
+        }
+      }
+    },
+    "liturgical_schedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "lectionary_occurrences": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["tradition", "cycle", "sunday_or_feast", "liturgical_season"],
+            "additionalProperties": false,
+            "properties": {
+              "tradition": {
+                "type": "string",
+                "enum": ["roman_rite_roman_catholic", "revised_common_lectionary", "lutheran_book_of_worship", "book_of_common_prayer", "eastern_orthodox", "ethiopian_orthodox", "coptic_orthodox", "armenian_apostolic", "reformed", "anabaptist"]
+              },
+              "cycle": {
+                "type": "string",
+                "enum": ["year_a", "year_b", "year_c", "year_1", "year_2", "annual", "continuous"]
+              },
+              "sunday_or_feast": { "type": "string", "description": "e.g. 'Proper 12', 'Easter Vigil', 'Pentecost Sunday'" },
+              "liturgical_season": {
+                "type": "string",
+                "enum": ["advent", "christmas", "epiphany", "lent", "holy_week", "easter", "pentecost", "ordinary_time", "kingdom_tide", "trinitytide"]
+              },
+              "role": {
+                "type": "string",
+                "enum": ["ot_reading", "psalm", "epistle", "gospel", "canticle", "responsory", "tract", "sequence", "alleluia_verse"]
+              },
+              "is_primary_reading": { "type": "boolean", "default": false },
+              "canonical_color": {
+                "type": "string",
+                "enum": ["white", "red", "green", "purple", "rose", "blue", "black", "gold"]
+              },
+              "next_occurrence_iso_date": {
+                "type": "string",
+                "format": "date",
+                "description": "ISO 8601 date of the next scheduled occurrence from reference date."
+              }
+            }
+          }
+        },
+        "biblefi_rrule": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Custom BibleFi Recurrence Rule — extends iCalendar RRULE with liturgical-calendar awareness.",
+          "properties": {
+            "freq": {
+              "type": "string",
+              "enum": ["LITURGICAL_WEEKLY", "LITURGICAL_ANNUAL", "FEAST_DAY", "DAILY_OFFICE", "LECTIO_CONTINUA"]
+            },
+            "by_season": {
+              "type": "array",
+              "items": { "type": "string", "enum": ["advent", "christmas", "epiphany", "lent", "holy_week", "easter", "pentecost", "ordinary_time"] }
+            },
+            "interval": { "type": "integer", "minimum": 1 },
+            "count": { "type": "integer", "minimum": 1 },
+            "until_iso_date": { "type": "string", "format": "date" },
+            "tradition_filter": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "temporal_integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Tracks content freshness, verification staleness, and temporal drift from authoritative source.",
+      "properties": {
+        "first_verified_at": { "type": "string", "format": "date-time" },
+        "last_verified_at": { "type": "string", "format": "date-time" },
+        "verification_interval_days": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Expected re-verification cadence in days."
+        },
+        "decay_model": {
+          "type": "string",
+          "enum": ["linear", "exponential", "step_function", "half_life"],
+          "description": "Algorithm used to compute trust_decay_score over time."
+        },
+        "half_life_days": {
+          "type": "number",
+          "minimum": 1,
+          "description": "For half_life decay model: days until trust_decay_score halves. E.g., 365 = annual refresh cycle."
+        },
+        "trust_decay_score": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Current computed trust score (1.0 = freshly verified, approaches 0.0 over time per decay_model)."
+        },
+        "is_stale": {
+          "type": "boolean",
+          "description": "True when trust_decay_score < 0.2 or last_verified_at > verification_interval_days ago."
+        },
+        "source_content_hash_at_last_verification": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$",
+          "description": "content_hash value at time of last verification — diff against current to detect tampering."
+        },
+        "drift_detected": {
+          "type": "boolean",
+          "description": "True if current content_hash differs from source_content_hash_at_last_verification."
+        },
+        "verification_authority": {
+          "type": "string",
+          "description": "DID, address, or org name of the verifying authority."
+        }
+      }
+    },
+    "interoperability_links": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Typed links to related records in other BibleFi schemas and external ontologies.",
+      "properties": {
+        "church_record_refs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["church_record_id", "link_type"],
+            "additionalProperties": false,
+            "properties": {
+              "church_record_id": { "type": "string", "format": "uuid" },
+              "link_type": { "type": "string", "enum": ["used_in_sermon", "used_in_liturgy", "memorization_verse", "founding_scripture", "mission_statement_basis"] },
+              "notes": { "type": "string" }
+            }
+          }
+        },
+        "agent_envelope_refs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["envelope_id", "agent_action"],
+            "additionalProperties": false,
+            "properties": {
+              "envelope_id": { "type": "string", "format": "uuid" },
+              "agent_action": { "type": "string", "enum": ["cited_in_reasoning", "used_as_prompt_context", "output_generated_from", "fact_checked_against"] }
+            }
+          }
+        },
+        "defi_strategy_refs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["strategy_id", "theological_basis"],
+            "additionalProperties": false,
+            "properties": {
+              "strategy_id": { "type": "string", "format": "uuid" },
+              "theological_basis": { "type": "string", "description": "How this scripture informs the DeFi strategy (e.g., stewardship, tithe mechanics)." }
+            }
+          }
+        },
+        "external_ontology_mappings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["ontology", "identifier"],
+            "additionalProperties": false,
+            "properties": {
+              "ontology": { "type": "string", "enum": ["bibframe", "osis", "usfm", "sword", "wikidata", "openscriptures", "crosswire", "logos_bible_software", "faithlife"] },
+              "identifier": { "type": "string", "description": "The passage identifier in that ontology's namespace (e.g., Wikidata Q-number, OSIS ref)." },
+              "uri": { "type": "string", "format": "uri" },
+              "equivalence_type": { "type": "string", "enum": ["exact_match", "close_match", "broad_match", "narrow_match", "related_match"] }
+            }
+          }
+        }
+      }
+    },
+    "oral_tradition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "transmission_form": {
+          "type": "string",
+          "enum": ["saga", "legend", "myth", "hymn", "creed", "proverb", "prophetic_oracle", "parable", "aphorism", "genealogy", "law_code", "liturgical_formula", "epistle_fragment", "unknown"]
+        },
+        "sitz_im_leben": {
+          "type": "string",
+          "description": "The original life-setting / social context in which the oral unit functioned (form-critical analysis)."
+        },
+        "estimated_oral_period": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "earliest_bce_ce": { "type": "string", "pattern": "^-?\\d+$", "description": "e.g. '-950' for 950 BCE, '30' for 30 CE." },
+            "latest_bce_ce": { "type": "string", "pattern": "^-?\\d+$" },
+            "confidence": { "type": "string", "enum": ["high", "moderate", "speculative"] }
+          }
+        },
+        "mnemonic_devices": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["acrostic", "chiasm", "inclusio", "refrain", "parallelism", "alliteration", "numerical_saying", "wordplay"] },
+          "uniqueItems": true,
+          "description": "Literary-mnemonic devices detected that aided oral transmission."
+        },
+        "redaction_stages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["stage_label", "hypothesis"],
+            "additionalProperties": false,
+            "properties": {
+              "stage_label": { "type": "string", "description": "e.g. 'J source', 'Deuteronomistic redaction', 'Pauline interpolation'" },
+              "hypothesis": { "type": "string", "enum": ["documentary", "supplementary", "fragmentary", "oral_formulaic", "rhetorical_critical"] },
+              "period_bce_ce": { "type": "string", "pattern": "^-?\\d+$" },
+              "scholarly_consensus": { "type": "string", "enum": ["majority", "minority", "contested", "fringe"] }
+            }
+          }
+        }
+      }
+    },
+    "computational_linguistics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "syntax_tree_format": {
+          "type": "string",
+          "enum": ["Penn_Treebank", "Universal_Dependencies", "RST", "HPSG", "LFG"],
+          "description": "Format of the syntax_tree_ref encoding."
+        },
+        "syntax_tree_ref": {
+          "type": "string",
+          "format": "uri",
+          "description": "URI to externally stored parse tree (too large for inline storage)."
+        },
+        "discourse_structure": {
+          "type": "string",
+          "enum": ["elaboration", "contrast", "cause_effect", "sequence", "background", "enablement", "motivation", "antithesis", "summary", "restatement"],
+          "description": "RST (Rhetorical Structure Theory) discourse relation to its immediate textual context."
+        },
+        "word_count": { "type": "integer", "minimum": 0 },
+        "unique_lemma_count": { "type": "integer", "minimum": 0 },
+        "hapax_legomena": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true,
+          "description": "Words appearing only once in the entire corpus — critical for translation studies."
+        },
+        "morphological_complexity_score": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Normalized score (0=analytic, 1=highly synthetic/polysynthetic) of the source language morphology."
+        },
+        "lexical_alignment": {
+          "type": "array",
+          "description": "Token-level alignment between source language and this translation.",
+          "items": {
+            "type": "object",
+            "required": ["source_token", "target_tokens", "alignment_type"],
+            "additionalProperties": false,
+            "properties": {
+              "source_token": { "type": "string" },
+              "source_strongs_id": { "type": "string", "pattern": "^[GH]\\d{1,4}$" },
+              "target_tokens": { "type": "array", "items": { "type": "string" } },
+              "alignment_type": { "type": "string", "enum": ["one_to_one", "one_to_many", "many_to_one", "many_to_many", "null_aligned", "idiomatic"] },
+              "confidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+            }
+          }
         }
       }
     }
