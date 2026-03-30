@@ -1,11 +1,28 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.biblefi.io/v2/scripture_record.schema.json",
+  "$id": "https://schemas.biblefi.io/v3/scripture_record.schema.json",
   "title": "ScriptureRecord",
-  "description": "v2.0.0 — Canonical reference to a Bible passage with cryptographic content hashing, AI metadata, hermeneutics, cross-references, multi-chain attestations, and full provenance tracking.",
+  "description": "v3.0.0 — Canonical reference to a Bible passage with cryptographic content hashing, AI metadata, hermeneutics, cross-references, multi-chain attestations, full provenance tracking, canonical signatures, integrity proofs, lineage DAG, semantic tensors, temporal stratigraphy, rhetorical analysis, economic metadata, interoperability mappings, access control policies, and ZK proof bundles.",
   "type": "object",
-  "required": ["record_id", "schema_version", "book", "chapter", "verses", "translation", "text", "content_hash"],
+  "required": ["record_id", "schema_version", "book", "chapter", "verses", "translation", "text", "content_hash", "canonical_signature", "integrity_proof"],
   "additionalProperties": false,
+  "$defs": {
+    "HexHash": {
+      "type": "string",
+      "pattern": "^0x[0-9a-fA-F]{64}$",
+      "description": "Keccak-256 hash, 0x-prefixed hex."
+    },
+    "EthAddress": {
+      "type": "string",
+      "pattern": "^0x[0-9a-fA-F]{40}$",
+      "description": "EIP-55 checksummed Ethereum address."
+    },
+    "Base64Url": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_\\-]+=*$",
+      "description": "Base64url-encoded bytes."
+    }
+  },
   "properties": {
     "record_id": {
       "type": "string",
@@ -16,7 +33,7 @@
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+$",
       "description": "Semantic version of the ScriptureRecord schema (e.g. '2.0.0').",
-      "examples": ["2.0.0"]
+      "examples": ["3.0.0"]
     },
     "book": {
       "type": "string",
@@ -427,6 +444,573 @@
           },
           "diff_summary": { "type": "string" },
           "reviewed_by": { "type": "string" }
+        }
+      }
+    },
+    "canonical_signature": {
+      "type": "object",
+      "description": "Multi-layer deterministic signing envelope that proves the record was produced by an authorised pipeline.",
+      "required": ["pipeline_id", "signing_algorithm", "signature", "signed_fields", "timestamp_iso"],
+      "additionalProperties": false,
+      "properties": {
+        "pipeline_id": {
+          "type": "string",
+          "description": "URN of the authorised signing pipeline, e.g. urn:biblefi:pipeline:ingest:v3",
+          "pattern": "^urn:biblefi:pipeline:[a-z0-9_\\-]+(:[a-z0-9_\\-]+)*$"
+        },
+        "signing_algorithm": {
+          "type": "string",
+          "enum": ["Ed25519", "secp256k1", "BLS12-381", "Dilithium3"],
+          "description": "Cryptographic signing algorithm. Dilithium3 is the post-quantum option."
+        },
+        "signature": {
+          "type": "string",
+          "description": "Base64url-encoded signature over the canonical JSON of `signed_fields`.",
+          "pattern": "^[A-Za-z0-9_\\-]+=*$"
+        },
+        "public_key_fingerprint": {
+          "type": "string",
+          "description": "SHA-256 fingerprint of the signer public key, hex-encoded.",
+          "pattern": "^[0-9a-fA-F]{64}$"
+        },
+        "signed_fields": {
+          "type": "array",
+          "description": "Ordered list of top-level field names included in the signature payload. The canonical payload is produced by: (1) extracting only these keys from the record, (2) sorting object keys recursively, (3) serialising as RFC 8785 JCS.",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "timestamp_iso": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 UTC timestamp at which the signature was produced."
+        },
+        "revocation_uri": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional URI where revocation status of this signature can be checked (e.g. OCSP or on-chain revocation list)."
+        }
+      }
+    },
+    "lineage_dag": {
+      "type": "object",
+      "description": "DAG of prior scripture_record versions and transformations that produced this record.",
+      "required": ["nodes", "edges"],
+      "additionalProperties": false,
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "description": "Each node is a prior record or external source.",
+          "items": {
+            "type": "object",
+            "required": ["node_id", "record_uri"],
+            "additionalProperties": false,
+            "properties": {
+              "node_id": { "type": "string", "pattern": "^[a-z0-9_\\-]{1,64}$" },
+              "record_uri": { "type": "string", "format": "uri" },
+              "content_hash": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$" },
+              "node_type": {
+                "type": "string",
+                "enum": ["source_manuscript", "prior_version", "parallel_translation", "commentary", "external_dataset"]
+              }
+            }
+          },
+          "minItems": 1
+        },
+        "edges": {
+          "type": "array",
+          "description": "Directed edges from parent node to child, annotated with transformation type.",
+          "items": {
+            "type": "object",
+            "required": ["from_node_id", "to_node_id", "transformation"],
+            "additionalProperties": false,
+            "properties": {
+              "from_node_id": { "type": "string" },
+              "to_node_id": { "type": "string" },
+              "transformation": {
+                "type": "string",
+                "enum": [
+                  "translation", "revision", "emendation", "harmonisation",
+                  "ai_paraphrase", "commentary_extraction", "merge", "fork"
+                ]
+              },
+              "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Algorithmic confidence that this edge relationship is correct (0–1)."
+              },
+              "edge_hash": {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{64}$",
+                "description": "Keccak-256 of concatenated `from_content_hash + to_content_hash + transformation`."
+              }
+            }
+          }
+        },
+        "dag_root_hash": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$",
+          "description": "Merkle root of all edge_hash values in topological sort order. Allows compact DAG integrity checks."
+        }
+      }
+    },
+    "semantic_tensor": {
+      "type": "object",
+      "description": "Multi-space semantic embedding and distance metrics for this passage.",
+      "required": ["embedding_model", "primary_vector"],
+      "additionalProperties": false,
+      "properties": {
+        "embedding_model": {
+          "type": "string",
+          "description": "Identifier of the embedding model used, e.g. 'biblefi-theological-v3' or 'openai/text-embedding-3-large'."
+        },
+        "model_version": { "type": "string" },
+        "primary_vector": {
+          "type": "array",
+          "description": "Dense float vector. Dimensionality must match the named model.",
+          "items": { "type": "number" },
+          "minItems": 64,
+          "maxItems": 4096
+        },
+        "quantized_vector": {
+          "type": "string",
+          "description": "Optional base64url-encoded int8 quantized version of primary_vector for compact storage.",
+          "pattern": "^[A-Za-z0-9_\\-]+=*$"
+        },
+        "nearest_neighbours": {
+          "type": "array",
+          "description": "Top-K semantically nearest passages in the embedding index.",
+          "items": {
+            "type": "object",
+            "required": ["passage_uri", "cosine_similarity"],
+            "additionalProperties": false,
+            "properties": {
+              "passage_uri": { "type": "string", "format": "uri" },
+              "cosine_similarity": { "type": "number", "minimum": -1, "maximum": 1 },
+              "shared_themes": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Theological themes that explain the similarity."
+              }
+            }
+          },
+          "maxItems": 20
+        },
+        "intertextuality_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Aggregate score (0–1) quantifying how strongly this passage echoes or is echoed by other canonical passages, computed via weighted cosine sum over nearest_neighbours."
+        },
+        "doctrinal_cluster": {
+          "type": "string",
+          "description": "Label of the doctrinal cluster this passage belongs to in the current embedding space's k-means partition.",
+          "examples": ["soteriology", "eschatology", "christology", "pneumatology", "creation"]
+        },
+        "cluster_centroid_distance": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Euclidean distance from this vector to its doctrinal cluster centroid. Lower = more prototypical of the cluster."
+        }
+      }
+    },
+    "temporal_stratigraphy": {
+      "type": "object",
+      "description": "Multi-framework chronological dating and temporal reasoning for the passage.",
+      "additionalProperties": false,
+      "properties": {
+        "composition_window": {
+          "type": "object",
+          "description": "Estimated date range for original composition.",
+          "required": ["earliest_year_bce_ce", "latest_year_bce_ce", "calendar_system"],
+          "additionalProperties": false,
+          "properties": {
+            "earliest_year_bce_ce": { "type": "integer", "description": "Negative = BCE, positive = CE." },
+            "latest_year_bce_ce": { "type": "integer", "description": "Negative = BCE, positive = CE." },
+            "calendar_system": {
+              "type": "string",
+              "enum": ["gregorian_proleptic", "julian_proleptic", "hebrew_anno_mundi", "byzantine_anno_mundi"]
+            },
+            "confidence_interval": {
+              "type": "number", "minimum": 0, "maximum": 1,
+              "description": "Statistical confidence that the true date falls within the window."
+            }
+          }
+        },
+        "redaction_layers": {
+          "type": "array",
+          "description": "Ordered list of identified editorial/redaction layers from earliest to latest.",
+          "items": {
+            "type": "object",
+            "required": ["layer_id", "hypothesis"],
+            "additionalProperties": false,
+            "properties": {
+              "layer_id": { "type": "string" },
+              "hypothesis": {
+                "type": "string",
+                "enum": ["J", "E", "D", "P", "H", "deutero_isaiah", "trito_isaiah", "proto_luke", "Q", "other"]
+              },
+              "verses_affected": {
+                "type": "array",
+                "items": { "type": "string", "pattern": "^[0-9]+(:[0-9]+)?$" }
+              },
+              "scholarly_consensus": {
+                "type": "string",
+                "enum": ["strong", "moderate", "minority", "speculative"]
+              }
+            }
+          }
+        },
+        "canonical_fixation_year_ce": {
+          "type": "integer",
+          "description": "Approximate year CE when this text was canonically fixed in the relevant tradition."
+        },
+        "first_extant_manuscript_year_bce_ce": {
+          "type": "integer",
+          "description": "Year of the earliest known physical manuscript of this passage. Negative = BCE, positive = CE."
+        },
+        "temporal_gap_years": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Computed transmission gap in years between original composition and canonical fixation. Uses integer arithmetic on the signed BCE/CE year convention (negative = BCE, positive = CE), so the gap equals `canonical_fixation_year_ce - composition_window.earliest_year_bce_ce` where both values use the same signed-integer convention."
+        }
+      }
+    },
+    "rhetorical_analysis": {
+      "type": "object",
+      "description": "Advanced rhetorical and structural analysis of the passage.",
+      "additionalProperties": false,
+      "properties": {
+        "chiastic_structure": {
+          "type": "object",
+          "description": "If the passage exhibits chiasm (A-B-C-B'-A'), describe each arm.",
+          "required": ["is_chiastic"],
+          "additionalProperties": false,
+          "properties": {
+            "is_chiastic": { "type": "boolean" },
+            "pivot_verse": { "type": "string", "pattern": "^[0-9]+(:[0-9]+)?$" },
+            "arms": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["arm_label", "verses", "corresponding_arm_label"],
+                "additionalProperties": false,
+                "properties": {
+                  "arm_label": { "type": "string", "examples": ["A", "B", "C", "B'", "A'"] },
+                  "verses": { "type": "array", "items": { "type": "string" } },
+                  "corresponding_arm_label": { "type": "string" },
+                  "thematic_link": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "inclusio_pairs": {
+          "type": "array",
+          "description": "Pairs of verses that form inclusio (bookend) structures.",
+          "items": {
+            "type": "object",
+            "required": ["opening_verse", "closing_verse", "linking_phrase"],
+            "additionalProperties": false,
+            "properties": {
+              "opening_verse": { "type": "string" },
+              "closing_verse": { "type": "string" },
+              "linking_phrase": { "type": "string" }
+            }
+          }
+        },
+        "figures_of_speech": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["figure_type", "verse_reference", "source_text_snippet"],
+            "additionalProperties": false,
+            "properties": {
+              "figure_type": {
+                "type": "string",
+                "enum": [
+                  "metaphor", "simile", "metonymy", "synecdoche", "hyperbole",
+                  "litotes", "irony", "parallelism", "anaphora", "epiphora",
+                  "hendiadys", "merism", "apostrophe", "personification"
+                ]
+              },
+              "verse_reference": { "type": "string" },
+              "source_text_snippet": { "type": "string", "maxLength": 512 },
+              "theological_function": { "type": "string", "maxLength": 1024 }
+            }
+          }
+        },
+        "discourse_type": {
+          "type": "string",
+          "enum": [
+            "narrative", "prophecy", "apocalyptic", "wisdom", "epistle",
+            "hymn", "lament", "thanksgiving", "legal_code", "genealogy",
+            "farewell_discourse", "sermon", "parable", "theophany"
+          ]
+        },
+        "illocutionary_force_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Score (0–1) estimating imperative/directive illocutionary force of the passage (0 = purely descriptive, 1 = purely commanding)."
+        }
+      }
+    },
+    "economic_metadata": {
+      "type": "object",
+      "description": "Economic, licensing, and tokenisation metadata for this scripture record.",
+      "additionalProperties": false,
+      "properties": {
+        "licence": {
+          "type": "string",
+          "enum": ["CC0-1.0", "CC-BY-4.0", "CC-BY-SA-4.0", "proprietary", "open_canon"],
+          "description": "Content licence governing downstream use."
+        },
+        "royalty_basis_points": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "EIP-2981 royalty in basis points (e.g. 250 = 2.5%)."
+        },
+        "token_gate": {
+          "type": "object",
+          "description": "Optional token-gating requirements to access this record's full content.",
+          "additionalProperties": false,
+          "properties": {
+            "chain_id": { "type": "integer" },
+            "contract_address": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$" },
+            "token_standard": { "type": "string", "enum": ["ERC-20", "ERC-721", "ERC-1155", "ERC-4626"] },
+            "minimum_balance": { "type": "string", "description": "Minimum token balance as a decimal string (supports big integers)." }
+          }
+        },
+        "citation_value_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Normalised score (0–1) quantifying this passage's scholarly citation frequency across indexed academic corpora. Used for dynamic royalty calculations."
+        },
+        "usage_metering": {
+          "type": "object",
+          "description": "Metering config for pay-per-use API access.",
+          "additionalProperties": false,
+          "properties": {
+            "unit": { "type": "string", "enum": ["per_read", "per_embed", "per_attestation", "per_derivative"] },
+            "price_usdc_micro": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Price in micro-USDC (1e-6 USDC) per unit."
+            },
+            "payment_splitter_address": {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]{40}$",
+              "description": "On-chain payment splitter contract distributing fees among rights-holders."
+            }
+          }
+        }
+      }
+    },
+    "integrity_proof": {
+      "type": "object",
+      "description": "Deterministic layered hash-chain proof binding all major sections into a single tamper-evident root.\n\nintegrity_proof algorithm (v3):\n  1. section_hashes: for each section_name in alphabetical order of the keys listed in `covered_sections`,\n       compute Keccak-256( UTF-8( JCS( record[section_name] ) ) )  → hex string\n  2. leaf_hashes: [ Keccak-256( section_name_bytes || section_hash_bytes ) for each ]\n  3. merkle_root: binary Merkle tree over leaf_hashes (pad with zero-hash if odd count)\n  4. binding_preimage: merkle_root || content_hash || schema_version_bytes(utf8)\n  5. record_root: Keccak-256( binding_preimage )\n  This record_root is the single value to anchor on-chain or in a canonical_signature payload.",
+      "required": ["record_root", "covered_sections", "section_hashes", "merkle_root", "proof_algorithm_version"],
+      "additionalProperties": false,
+      "properties": {
+        "record_root": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$",
+          "description": "Final Keccak-256 root binding all covered sections + content_hash + schema version."
+        },
+        "covered_sections": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "Alphabetically ordered list of top-level field names included in the proof."
+        },
+        "section_hashes": {
+          "type": "object",
+          "description": "Map of field_name → Keccak-256 hex of JCS-serialised field value.",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{64}$"
+          }
+        },
+        "merkle_root": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$",
+          "description": "Binary Merkle root over the leaf hashes of all covered_sections."
+        },
+        "proof_algorithm_version": {
+          "type": "string",
+          "enum": ["biblefi-integrity-v1", "biblefi-integrity-v2", "biblefi-integrity-v3"],
+          "description": "Version of the integrity proof algorithm."
+        },
+        "incremental_proof_path": {
+          "type": "array",
+          "description": "Optional Merkle audit path (sibling hashes) allowing a verifier to re-derive the merkle_root from a single section_hash without re-hashing the entire record.",
+          "items": {
+            "type": "object",
+            "required": ["position", "sibling_hash"],
+            "additionalProperties": false,
+            "properties": {
+              "position": { "type": "string", "enum": ["left", "right"] },
+              "sibling_hash": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$" }
+            }
+          }
+        }
+      }
+    },
+    "interoperability_map": {
+      "type": "object",
+      "description": "Cross-standard and cross-ontology identifier mappings for interoperability.",
+      "additionalProperties": false,
+      "properties": {
+        "osis_id": { "type": "string", "description": "OSIS passage identifier, e.g. 'Gen.1.1'." },
+        "usfm_marker": { "type": "string", "description": "USFM chapter/verse marker string." },
+        "paratext_id": { "type": "string" },
+        "sword_key": { "type": "string", "description": "SWORD module passage key." },
+        "wikidata_qid": {
+          "type": "string",
+          "pattern": "^Q[0-9]+$",
+          "description": "Wikidata QID for the book or pericope."
+        },
+        "schema_org_type": {
+          "type": "string",
+          "enum": ["schema:Book", "schema:Chapter", "schema:Article"],
+          "description": "Closest Schema.org type for SEO/structured-data use."
+        },
+        "linked_data_uri": {
+          "type": "string",
+          "format": "uri",
+          "description": "Canonical Linked Data URI for this passage (e.g. DBpedia or Bible Linked Data)."
+        },
+        "dts_endpoint": {
+          "type": "string",
+          "format": "uri",
+          "description": "Distributed Text Services (DTS) API endpoint resolving this passage."
+        },
+        "frbr_expression_uri": {
+          "type": "string",
+          "format": "uri",
+          "description": "FRBR Expression-level URI (translation-specific instantiation)."
+        }
+      }
+    },
+    "access_control_policy": {
+      "type": "object",
+      "description": "Inline ABAC policy governing who may read, write, attest, or derive from this record.",
+      "additionalProperties": false,
+      "properties": {
+        "policy_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "default_effect": { "type": "string", "enum": ["allow", "deny"] },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["rule_id", "effect", "actions", "conditions"],
+            "additionalProperties": false,
+            "properties": {
+              "rule_id": { "type": "string" },
+              "effect": { "type": "string", "enum": ["allow", "deny"] },
+              "actions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["read", "attest", "derive", "embed", "commercialise", "redistribute"]
+                },
+                "minItems": 1,
+                "uniqueItems": true
+              },
+              "conditions": {
+                "type": "object",
+                "description": "ABAC condition bag. All present conditions must be satisfied (AND logic).",
+                "additionalProperties": false,
+                "properties": {
+                  "required_roles": {
+                    "type": "array",
+                    "items": { "type": "string", "enum": ["scholar", "publisher", "node_operator", "public", "dao_member", "verified_ministry"] }
+                  },
+                  "required_chain_attestation": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{40}$",
+                    "description": "Requester must hold a valid attestation from this contract address."
+                  },
+                  "geo_restriction": {
+                    "type": "array",
+                    "items": { "type": "string", "pattern": "^[A-Z]{2}$" },
+                    "description": "ISO 3166-1 alpha-2 country codes where this action is permitted."
+                  },
+                  "time_window": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "not_before": { "type": "string", "format": "date-time" },
+                      "not_after": { "type": "string", "format": "date-time" }
+                    }
+                  }
+                }
+              },
+              "priority": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Higher priority rules are evaluated first. Ties broken by `deny` wins."
+              }
+            }
+          }
+        },
+        "policy_hash": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$",
+          "description": "Keccak-256 of JCS-serialised `rules` array. Included in integrity_proof."
+        }
+      }
+    },
+    "zk_proof_bundle": {
+      "type": "object",
+      "description": "ZK-proof bundle for privacy-preserving claims about this record.",
+      "additionalProperties": false,
+      "properties": {
+        "proof_system": {
+          "type": "string",
+          "enum": ["Groth16", "PLONK", "FFLONK", "STARKs", "Halo2", "Nova"],
+          "description": "ZK proof system used."
+        },
+        "circuit_id": {
+          "type": "string",
+          "description": "Identifier of the verifier circuit, e.g. 'biblefi-canon-membership-v1'."
+        },
+        "public_inputs": {
+          "type": "array",
+          "description": "Public inputs to the circuit (hex-encoded field elements).",
+          "items": { "type": "string", "pattern": "^0x[0-9a-fA-F]+$" }
+        },
+        "proof_bytes": {
+          "type": "string",
+          "description": "Base64url-encoded serialised proof.",
+          "pattern": "^[A-Za-z0-9_\\-]+=*$"
+        },
+        "verification_key_uri": {
+          "type": "string",
+          "format": "uri",
+          "description": "URI to the verification key for this circuit."
+        },
+        "claim": {
+          "type": "string",
+          "enum": [
+            "canon_membership",
+            "content_hash_preimage",
+            "translation_authenticity",
+            "author_credential",
+            "timestamp_bound",
+            "embedding_range"
+          ],
+          "description": "The specific claim this proof establishes."
+        },
+        "nullifier": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$",
+          "description": "Optional nullifier to prevent double-use of this proof in stateful verifier contracts."
         }
       }
     }
