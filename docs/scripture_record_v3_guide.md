@@ -15,7 +15,7 @@
 4. [Code Snippets](#4-code-snippets)
    - [Computing `zero_knowledge_proof.nullifier`](#41-computing-zero_knowledge_proofnullifier)
    - [Computing `semantic_diff.semantic_drift_score`](#42-computing-semantic_diffsemantic_drift_score)
-   - [Computing `recitation_metrics.memorability_index`](#43-computing-recitation_metricsmemorabilitiy_index)
+   - [Computing `recitation_metrics.memorability_index`](#43-computing-recitation_metrics-memorability_index)
 5. [Full Annotated Example Payload](#5-full-annotated-example-payload)
 
 ---
@@ -401,7 +401,7 @@ def semantic_drift_score(
 
 ---
 
-### 4.3 Computing `recitation_metrics.memorability_index`
+### 4.3 Computing `recitation_metrics.memorability_index` {#43-computing-recitation_metrics-memorability_index}
 
 ```python
 def memorability_index(
