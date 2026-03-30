@@ -1,1 +1,94 @@
-
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/v2/agent_envelope.schema.json",
+  "title": "AgentEnvelope",
+  "description": "v2.0.0 — Universal message wrapper for all BibleFi agent communications. Carries any BibleFi payload type with cryptographic signature, routing metadata, security context, and Farcaster/Base chain context. All BibleFi agents run sandboxed per SANDBOXING_POLICY.md in BibleFi/BibleFi.",
+  "type": "object",
+  "required": ["envelope_id", "schema_version", "created_at", "payload_type", "payload", "sender"],
+  "additionalProperties": false,
+  "properties": {
+    "envelope_id": { "type": "string", "format": "uuid" },
+    "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$", "examples": ["2.0.0"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "payload_type": {
+      "type": "string",
+      "enum": [
+        "scripture_record",
+        "defi_strategy",
+        "church_record",
+        "security_finding",
+        "wallet_record",
+        "user_profile",
+        "tithe_transaction",
+        "governance_vote",
+        "farcaster_frame_event"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "description": "The wrapped payload object. Must conform to the schema identified by payload_type."
+    },
+    "sender": {
+      "type": "object",
+      "required": ["agent_id", "agent_type"],
+      "additionalProperties": false,
+      "properties": {
+        "agent_id": { "type": "string", "format": "uuid" },
+        "agent_type": { "type": "string", "description": "Agent type from BibleFi AGENT_TAXONOMY.md" },
+        "wallet_address": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$" },
+        "fid": { "type": "integer", "minimum": 1, "description": "Farcaster ID of sending agent" }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": { "type": "string", "enum": ["secp256k1", "ed25519", "rsa-pss"] },
+        "value": { "type": "string" },
+        "public_key": { "type": "string" }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "destination_agent": { "type": "string" },
+        "source_agent": { "type": "string" },
+        "priority": { "type": "string", "enum": ["low", "normal", "high", "critical"], "default": "normal" },
+        "ttl_seconds": { "type": "integer", "minimum": 0 },
+        "retry_count": { "type": "integer", "minimum": 0 },
+        "correlation_id": { "type": "string", "format": "uuid" }
+      }
+    },
+    "security_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "classification": { "type": "string", "enum": ["public", "internal", "confidential", "restricted"] },
+        "requires_verification": { "type": "boolean", "default": false },
+        "trust_level": { "type": "string", "enum": ["untrusted", "low", "medium", "high", "verified"], "description": "See TRUST_BOUNDARIES.md in BibleFi/BibleFi" },
+        "sandboxed": { "type": "boolean", "default": true, "description": "All BibleFi agents run sandboxed per SANDBOXING_POLICY.md" }
+      }
+    },
+    "farcaster_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cast_hash": { "type": "string" },
+        "fid": { "type": "integer", "minimum": 1 },
+        "frame_action": { "type": "string" },
+        "channel_id": { "type": "string" }
+      }
+    },
+    "base_chain_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "block_number": { "type": "integer", "minimum": 0 },
+        "tx_hash": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$" },
+        "gas_used": { "type": "integer", "minimum": 0 },
+        "chain_id": { "type": "integer", "minimum": 1, "default": 8453, "description": "EVM chain ID. Base chain mainnet = 8453." }
+      }
+    }
+  }
+}

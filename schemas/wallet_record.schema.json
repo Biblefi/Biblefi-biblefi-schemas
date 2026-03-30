@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/wallet_record.schema.json",
+  "title": "WalletRecord",
+  "description": "v1.0.0 — EVM wallet identity record for BibleFi. Tracks wallet address, chain support, wallet type, balance snapshot, and treasury flag for use in BibleFi DeFi strategies and church treasury management on Base chain.",
+  "type": "object",
+  "required": ["wallet_id", "schema_version", "address"],
+  "additionalProperties": false,
+  "properties": {
+    "wallet_id": { "type": "string", "format": "uuid" },
+    "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$", "examples": ["1.0.0"] },
+    "address": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$", "description": "EVM wallet address" },
+    "ens_name": { "type": "string", "description": "ENS name associated with this wallet" },
+    "chain_ids": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1 },
+      "description": "Supported EVM chain IDs. Base mainnet = 8453."
+    },
+    "wallet_type": {
+      "type": "string",
+      "enum": ["eoa", "multisig", "smart_wallet", "hardware"],
+      "description": "EVM wallet type"
+    },
+    "owner_id": { "type": "string", "format": "uuid", "description": "Links to user_profile" },
+    "church_id": { "type": "string", "format": "uuid", "description": "Links to church_record if this is a church wallet" },
+    "is_treasury": { "type": "boolean", "default": false, "description": "Whether this wallet is a church/ministry treasury wallet" },
+    "balance_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Last known balance snapshot",
+      "properties": {
+        "taken_at": { "type": "string", "format": "date-time" },
+        "balances": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["asset_symbol", "amount_wei", "chain_id"],
+            "additionalProperties": false,
+            "properties": {
+              "asset_symbol": { "type": "string" },
+              "contract_address": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$" },
+              "chain_id": { "type": "integer", "minimum": 1 },
+              "amount_wei": { "type": "string", "pattern": "^\\d+$" },
+              "amount_usd": { "type": "number", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "farcaster_custody": { "type": "boolean", "default": false, "description": "Whether this is a Farcaster custody wallet" },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  }
+}

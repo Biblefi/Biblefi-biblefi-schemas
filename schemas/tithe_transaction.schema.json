@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/tithe_transaction.schema.json",
+  "title": "TitheTransaction",
+  "description": "v1.0.0 — BibleFi on-chain tithe and offering transaction. Tracks biblical giving (tithe, firstfruits, offering, almsgiving) on Base chain with scripture backing, smart contract routing, and on-chain attestation.",
+  "type": "object",
+  "required": ["transaction_id", "schema_version", "sender_wallet", "recipient_wallet", "amount_wei", "asset", "chain_id", "transaction_type", "scripture_reference"],
+  "additionalProperties": false,
+  "properties": {
+    "transaction_id": { "type": "string", "format": "uuid" },
+    "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$", "examples": ["1.0.0"] },
+    "sender_wallet": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$", "description": "Wallet of the giver" },
+    "sender_user_id": { "type": "string", "format": "uuid", "description": "Links to user_profile" },
+    "sender_church_id": { "type": "string", "format": "uuid", "description": "Links to church_record if church-to-church tithe" },
+    "recipient_wallet": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$", "description": "Wallet of the recipient church/ministry" },
+    "recipient_church_id": { "type": "string", "format": "uuid", "description": "Links to recipient church_record" },
+    "amount_wei": { "type": "string", "pattern": "^\\d+$", "description": "Amount in wei (uint256 as string to avoid precision loss)" },
+    "amount_usd": { "type": "number", "minimum": 0, "description": "USD equivalent at time of transaction" },
+    "asset": {
+      "type": "object",
+      "required": ["symbol", "contract_address", "chain_id", "decimals"],
+      "additionalProperties": false,
+      "properties": {
+        "symbol": { "type": "string", "examples": ["USDC", "ETH", "BFI"] },
+        "contract_address": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$" },
+        "chain_id": { "type": "integer", "minimum": 1, "description": "EVM chain ID. Base mainnet = 8453." },
+        "decimals": { "type": "integer", "minimum": 0, "maximum": 18 },
+        "coingecko_id": { "type": "string" }
+      }
+    },
+    "chain_id": { "type": "integer", "minimum": 1, "description": "EVM chain ID. Base mainnet = 8453." },
+    "tx_hash": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$", "description": "On-chain transaction hash" },
+    "block_number": { "type": "integer", "minimum": 0 },
+    "transaction_type": {
+      "type": "string",
+      "enum": ["tithe", "firstfruits", "offering", "almsgiving", "missions_gift", "building_fund", "emergency_relief", "scholarship"],
+      "description": "Type of giving transaction per biblical giving categories"
+    },
+    "scripture_reference": {
+      "type": "object",
+      "required": ["book", "chapter", "verses"],
+      "additionalProperties": false,
+      "description": "Scripture backing this giving transaction. E.g. Malachi 3:10 for tithe, 2 Corinthians 9:7 for offering.",
+      "properties": {
+        "book": { "type": "string" },
+        "chapter": { "type": "integer", "minimum": 1 },
+        "verses": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "array", "items": { "type": "integer", "minimum": 1 }, "minItems": 1, "uniqueItems": true },
+            { "type": "object", "required": ["from", "to"], "additionalProperties": false, "properties": { "from": { "type": "integer", "minimum": 1 }, "to": { "type": "integer", "minimum": 1 } } }
+          ]
+        }
+      }
+    },
+    "percentage_of_income": { "type": "number", "minimum": 0, "maximum": 100, "description": "If provided, percentage of income this represents (10% = tithe)" },
+    "is_recurring": { "type": "boolean", "default": false, "description": "Whether this is part of a recurring giving schedule" },
+    "recurrence_interval": { "type": "string", "enum": ["weekly", "biweekly", "monthly", "quarterly", "annually"] },
+    "giving_strategy_id": { "type": "string", "format": "uuid", "description": "Links to defi_strategy if yield-based giving" },
+    "smart_contract_routed": { "type": "boolean", "default": false, "description": "Whether routed via BibleFi smart contract" },
+    "contract_address": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$", "description": "BibleFi router/splitter contract address" },
+    "attestation": {
+      "type": "object",
+      "required": ["chain_id", "contract_address", "attestation_type"],
+      "additionalProperties": false,
+      "description": "On-chain attestation for this giving transaction.",
+      "properties": {
+        "chain_id": { "type": "integer", "minimum": 1, "description": "EVM chain ID. Base chain mainnet = 8453." },
+        "contract_address": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$" },
+        "token_id": { "type": "string" },
+        "tx_hash": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$" },
+        "attestation_type": { "type": "string", "enum": ["nft_mint", "eas_attestation", "hypercert", "poap", "sbt", "merkle_leaf", "farcaster_frame", "custom"] },
+        "block_number": { "type": "integer", "minimum": 0 },
+        "ipfs_cid": { "type": "string", "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[A-Za-z2-7]{58})$" },
+        "attested_at": { "type": "string", "format": "date-time" },
+        "attested_by": { "type": "string" },
+        "merkle_proof": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "root": { "type": "string" },
+            "proof": { "type": "array", "items": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$" } },
+            "leaf_index": { "type": "integer", "minimum": 0 },
+            "total_leaves": { "type": "integer", "minimum": 1 }
+          }
+        }
+      }
+    },
+    "notes": { "type": "string" },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  }
+}
