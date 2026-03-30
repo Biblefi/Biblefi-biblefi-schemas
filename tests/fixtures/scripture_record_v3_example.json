@@ -1,0 +1,416 @@
+{
+  "record_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+  "schema_version": "3.0.0",
+  "book": "John",
+  "chapter": 3,
+  "verses": 16,
+  "canonical_verse_count": 1,
+  "translation": {
+    "abbreviation": "KJV",
+    "full_name": "King James Version",
+    "language": "en",
+    "year_published": 1611,
+    "manuscript_tradition": "textus_receptus"
+  },
+  "text": "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.",
+  "content_hash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+  "hash_algorithm": "keccak256",
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-06-01T08:00:00Z",
+  "topics": [
+    "salvation",
+    "God's love",
+    "eternal life"
+  ],
+  "tags": [
+    "john316",
+    "gospel",
+    "memory-verse"
+  ],
+  "provenance": {
+    "source_organization": "Bible Foundation",
+    "license": "public_domain",
+    "attribution_required": false
+  },
+  "ai_metadata": {
+    "embedding_model": "text-embedding-3-large",
+    "embedding_version": "3",
+    "embedding_dimensions": 3072,
+    "semantic_clusters": [
+      "divine-love",
+      "soteriology",
+      "incarnation"
+    ],
+    "sentiment_score": 0.92,
+    "reading_level": {
+      "flesch_kincaid_grade": 8.2,
+      "flesch_reading_ease": 68.5,
+      "grade_label": "middle_school"
+    },
+    "theological_themes": [
+      {
+        "theme": "soteriology",
+        "confidence": 0.99
+      },
+      {
+        "theme": "christology",
+        "confidence": 0.95
+      },
+      {
+        "theme": "covenant",
+        "confidence": 0.72
+      }
+    ],
+    "named_entities": [
+      {
+        "name": "God",
+        "type": "deity",
+        "biblical_id": "H430"
+      },
+      {
+        "name": "Son",
+        "type": "person",
+        "biblical_id": "G5207"
+      }
+    ]
+  },
+  "cross_references": [
+    {
+      "book": "Romans",
+      "chapter": 5,
+      "verses": 8,
+      "relationship": "parallel",
+      "strength": "explicit",
+      "direction": "bidirectional",
+      "notes": "Both passages emphasise God's love demonstrated through Christ's sacrifice."
+    },
+    {
+      "book": "Isaiah",
+      "chapter": 53,
+      "verses": {
+        "from": 4,
+        "to": 6
+      },
+      "relationship": "fulfillment",
+      "strength": "probable",
+      "direction": "forward"
+    }
+  ],
+  "translation_graph": [
+    {
+      "abbreviation": "NIV",
+      "language": "en",
+      "text": "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.",
+      "content_hash": "0x1234abcd5678ef901234abcd5678ef901234abcd5678ef901234abcd5678ef90",
+      "year_published": 1978,
+      "semantic_similarity_to_primary": 0.97,
+      "notable_differences": "'one and only' vs 'only begotten'; 'believes' vs 'believeth'"
+    }
+  ],
+  "attestations": [
+    {
+      "chain_id": 8453,
+      "contract_address": "0x7bEda57074AA917FF0993fb329E16C2c188baF08",
+      "token_id": "1001",
+      "tx_hash": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+      "attestation_type": "nft_mint",
+      "block_number": 12345678,
+      "attested_at": "2024-01-15T10:35:00Z",
+      "attested_by": "0xBibleFiProtocol0000000000000000000000000",
+      "merkle_proof": {
+        "root": "0xaabbccddaabbccddaabbccddaabbccddaabbccddaabbccddaabbccddaabbccdd",
+        "proof": [
+          "0x1122334411223344112233441122334411223344112233441122334411223344",
+          "0x5566778855667788556677885566778855667788556677885566778855667788"
+        ],
+        "leaf_index": 15,
+        "total_leaves": 31102
+      }
+    }
+  ],
+  "hermeneutics": {
+    "literary_genre": "gospel",
+    "speech_act": "declaration",
+    "covenant_context": "new_covenant",
+    "canonical_position": "nt_gospel",
+    "christological_significance": "The most concise statement of the Gospel: Christ as the gift of God's love, the object of saving faith, and the source of eternal life.",
+    "typology": {
+      "is_antitype": true,
+      "is_type": false,
+      "type_description": "Fulfils the type of the bronze serpent (Numbers 21:8-9) referenced in John 3:14-15."
+    },
+    "interpretive_traditions": [
+      {
+        "tradition": "reformed",
+        "interpretation": "Emphasises unconditional election — 'the world' refers to the elect from all nations.",
+        "source": "Calvin's Commentary on John 3:16"
+      },
+      {
+        "tradition": "arminian",
+        "interpretation": "'The world' and 'whosoever' indicate God's universal saving intent, with salvation conditioned on individual faith.",
+        "source": "Wesley's Notes on the New Testament"
+      }
+    ],
+    "original_language_notes": {
+      "greek_keywords": [
+        {
+          "word": "ἠγάπησεν",
+          "strongs_id": "G25",
+          "gloss": "loved (aorist — a decisive, historical act of love)"
+        },
+        {
+          "word": "μονογενῆ",
+          "strongs_id": "G3439",
+          "gloss": "only begotten / one and only"
+        },
+        {
+          "word": "πιστεύων",
+          "strongs_id": "G4100",
+          "gloss": "believing (present participle — ongoing trust)"
+        }
+      ]
+    }
+  },
+  "revision_history": [
+    {
+      "revision_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "revised_at": "2024-01-15T10:30:00Z",
+      "revised_by": "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuias8ESyXXJwNoj1C",
+      "change_type": "schema_migration",
+      "content_hash_before": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "content_hash_after": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+      "diff_summary": "Initial creation under v3.0.0 schema migrated from v2.0.0 record."
+    }
+  ],
+  "zero_knowledge_proof": {
+    "protocol": "groth16",
+    "circuit_id": "biblefi-scripture-commitment-v1",
+    "proof_bytes": "0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b4d5e6f7a8b9c0d1e2f3a4b5c6d",
+    "public_inputs": [
+      "0x00000000000000000000000000000000abcdef1234567890abcdef1234567890",
+      "0x0000000000000000000000007bEda57074AA917FF0993fb329E16C2c188baF08"
+    ],
+    "verification_key_uri": "https://keys.biblefi.io/circuits/scripture-commitment-v1/vk.json",
+    "commitment": "0xc0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00",
+    "nullifier": "0xdeadbeef00deadbeef00deadbeef00deadbeef00deadbeef00deadbeef00dead",
+    "prover_address": "0x1234567890abcdef1234567890abcdef12345678",
+    "proved_at": "2024-06-01T08:00:00Z",
+    "expires_at": "2025-06-01T08:00:00Z"
+  },
+  "canonical_graph": {
+    "node_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "canonical_order": 26136,
+    "in_edges": [
+      {
+        "source_record_id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+        "edge_type": "fulfills",
+        "weight": 0.97,
+        "provenance_confidence": 0.95
+      }
+    ],
+    "out_edges": [
+      {
+        "target_record_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+        "edge_type": "elaborates",
+        "weight": 0.88,
+        "provenance_confidence": 0.9
+      }
+    ],
+    "strongly_connected_component": 0,
+    "betweenness_centrality": 0.842,
+    "pagerank_score": 0.973,
+    "clustering_coefficient": 0.71
+  },
+  "semantic_diff": {
+    "base_record_id": "00000000-0000-0000-0000-000000000001",
+    "base_content_hash": "0x0000000000000000000000000000000000000000000000000000000000000001",
+    "cosine_similarity": 0.998,
+    "jensen_shannon_divergence": 0.002,
+    "edit_distance_normalized": 0.015,
+    "semantic_drift_score": 0.005,
+    "changed_theological_themes": [
+      {
+        "theme": "soteriology",
+        "delta": 0.01
+      }
+    ],
+    "diff_model": "text-embedding-3-large",
+    "diff_computed_at": "2024-06-01T08:00:00Z"
+  },
+  "liturgical_context": {
+    "lectionary_system": "revised_common_lectionary",
+    "liturgical_season": "lent",
+    "liturgical_week": 4,
+    "liturgical_day": "sunday",
+    "year_cycle": "B",
+    "pericope_id": "RCL-B-Lent-4-Gospel",
+    "reading_role": "gospel",
+    "appointed_for_year": 2024,
+    "collect_theme": "God's redeeming love for the world",
+    "color": "purple"
+  },
+  "multi_sig_governance": {
+    "governance_contract": "0xabababababababababababababababababababab",
+    "proposal_id": "0xcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+    "required_signers": 3,
+    "current_signers": 3,
+    "threshold_type": "absolute",
+    "threshold_value": 1.0,
+    "signers": [
+      {
+        "address": "0xa000000000000000000000000000000000a00000",
+        "signed_at": "2024-05-20T14:00:00Z",
+        "signature": "0xaabbccddeeff00112233445566778899aabbccddeeff00112233445566778899bbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabb",
+        "role": "pastor",
+        "stake_weight": 1.5
+      },
+      {
+        "address": "0xEde0000000000000000000000000000000000b00",
+        "signed_at": "2024-05-20T15:00:00Z",
+        "signature": "0xbbccddee00112233445566778899aabbccddeeff00112233445566778899aabbddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccdd",
+        "role": "elder",
+        "stake_weight": 1.0
+      },
+      {
+        "address": "0xca000000000000000000000000000000000c0000",
+        "signed_at": "2024-05-21T09:00:00Z",
+        "signature": "0xccddee0011223344556677889900aabbccddeeff00112233445566778899aabbddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccdd",
+        "role": "scholar",
+        "stake_weight": 1.2
+      }
+    ],
+    "ratified_at": "2024-05-22T00:00:00Z",
+    "ratification_tx": "0xafafafafafafafaf000000000000000000000000000000000000000000000000",
+    "amendment_type": "metadata_update",
+    "veto_window_ends": "2024-05-29T00:00:00Z",
+    "vetoed_by": []
+  },
+  "recitation_metrics": {
+    "word_count": 26,
+    "syllable_count": 42,
+    "average_syllables_per_word": 1.62,
+    "rhyme_density": 0.2,
+    "alliteration_score": 0.12,
+    "parallelism_score": 0.68,
+    "memorability_index": 82.4,
+    "phoneme_inventory": [
+      "/f/",
+      "/ɔː/",
+      "/ɡ/",
+      "/ɒ/",
+      "/d/",
+      "/s/",
+      "/l/",
+      "/v/",
+      "/ð/",
+      "/w/",
+      "/ɜː/",
+      "/θ/",
+      "/h/",
+      "/eɪ/",
+      "/ɪ/",
+      "/z/",
+      "/n/",
+      "/b/",
+      "/t/"
+    ],
+    "stress_pattern": "irregular",
+    "oral_tradition_classification": "memory_verse"
+  },
+  "interoperability": {
+    "osis_id": "John.3.16",
+    "usfm_marker": "JHN 3:16",
+    "sword_module": "KJV",
+    "wikidata_qid": "Q2500",
+    "openscriptures_uri": "https://openscriptures.org/api/passage/?q=John+3:16",
+    "bible_org_api_ref": "john+3:16",
+    "logos_ref": "Bible.John.3.16",
+    "accordance_ref": "Jo 3:16",
+    "step_bible_ref": "ENGKJV/John/3/16",
+    "digital_bible_library_id": "john-3-16-kjv",
+    "linked_data_uri": "https://lod.biblefi.io/passage/john/3/16"
+  },
+  "covenant_map": {
+    "primary_covenant": "new_covenant",
+    "fulfillment_stage": "inauguration",
+    "poset_level": 5,
+    "related_covenants": [
+      "abrahamic",
+      "davidic",
+      "new_covenant"
+    ],
+    "covenant_keywords": [
+      "seed",
+      "blessing",
+      "Son",
+      "believe",
+      "eternal life"
+    ],
+    "redemptive_historical_arc": "ministry",
+    "inaugurated_eschatology_score": 0.75,
+    "typological_density": 0.82
+  },
+  "dispute_resolution": {
+    "disputes": [
+      {
+        "dispute_id": "d1e2f3a4-b5c6-7890-def0-123456789012",
+        "dispute_type": "textual_variant",
+        "status": "resolved",
+        "filed_by": "0xScholar000000000000000000000000000000000c",
+        "filed_at": "2023-11-01T09:00:00Z",
+        "resolution": "The Textus Receptus reading 'only begotten Son' (μονογενῆ υἱόν) is confirmed as the primary reading for this KJV record. The variant 'only Son' (μονογενῆ θεόν) used in critical text editions is noted but does not affect this translation record.",
+        "resolved_at": "2023-12-01T09:00:00Z",
+        "resolution_tx": "0xeeeeee0000000000000000000000000000000000000000000000000000000000",
+        "evidence_cids": [
+          "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"
+        ],
+        "dissenting_opinions": []
+      }
+    ]
+  },
+  "embedding_index": {
+    "vectors": [
+      {
+        "model": "text-embedding-3-large",
+        "version": "3.0",
+        "dimensions": 3072,
+        "vector_cid": "QmVectorCIDJohn316TextEmbedding3Large3072dims12345",
+        "quantization": "none",
+        "computed_at": "2024-06-01T08:00:00Z"
+      },
+      {
+        "model": "bge-m3",
+        "version": "1.0",
+        "dimensions": 1024,
+        "vector_cid": "QmVectorCIDJohn316BGEM3Model1024dims678901234567",
+        "quantization": "int8",
+        "computed_at": "2024-06-01T08:05:00Z"
+      }
+    ],
+    "umap_coordinates": {
+      "x": 2.347,
+      "y": -1.892,
+      "z": 0.541,
+      "n_neighbors": 15,
+      "min_dist": 0.1,
+      "metric": "cosine"
+    },
+    "nearest_neighbors": [
+      {
+        "record_id": "11111111-1111-1111-1111-111111111111",
+        "similarity": 0.982,
+        "distance_metric": "cosine"
+      },
+      {
+        "record_id": "22222222-2222-2222-2222-222222222222",
+        "similarity": 0.971,
+        "distance_metric": "cosine"
+      },
+      {
+        "record_id": "33333333-3333-3333-3333-333333333333",
+        "similarity": 0.958,
+        "distance_metric": "cosine"
+      }
+    ]
+  }
+}
