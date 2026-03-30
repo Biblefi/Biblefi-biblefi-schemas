@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/farcaster_frame_event.schema.json",
+  "title": "FarcasterFrameEvent",
+  "description": "v1.0.0 — BibleFi Farcaster Frame interaction event. BibleFi is a native Base App and Farcaster mini-app. Tracks user interactions with BibleFi frames for scripture, tithing, DeFi strategy, and church engagement within Farcaster/Warpcast.",
+  "type": "object",
+  "required": ["event_id", "schema_version", "fid", "frame_action", "frame_uri", "cast_hash", "timestamp"],
+  "additionalProperties": false,
+  "properties": {
+    "event_id": { "type": "string", "format": "uuid" },
+    "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$", "examples": ["1.0.0"] },
+    "fid": { "type": "integer", "minimum": 1, "description": "Farcaster ID of the interacting user" },
+    "username": { "type": "string", "description": "Farcaster username" },
+    "frame_action": {
+      "type": "string",
+      "enum": ["view", "click", "submit", "share", "mint", "tithe", "stake", "unstake", "claim", "vote"],
+      "description": "Action taken in the Farcaster Frame"
+    },
+    "frame_uri": { "type": "string", "format": "uri", "description": "URI of the Farcaster Frame" },
+    "cast_hash": { "type": "string", "description": "Hash of the Farcaster cast containing this frame" },
+    "channel_id": { "type": "string", "description": "Farcaster channel where the frame was cast (e.g. '/biblefi', '/faith', '/defi')" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "payload": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Frame-action-specific payload data (button index, text input, transaction data)"
+    },
+    "connected_wallet": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$", "description": "Wallet connected via Farcaster frame authentication" },
+    "chain_id": { "type": "integer", "minimum": 1, "description": "Chain ID for transaction-type frame actions. Base mainnet = 8453." },
+    "biblefi_action": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "BibleFi-specific action metadata",
+      "properties": {
+        "action_type": {
+          "type": "string",
+          "enum": ["scripture_view", "tithe_initiate", "tithe_complete", "strategy_view", "strategy_enter", "church_follow", "verse_share", "devotional_complete"]
+        },
+        "scripture_record_id": { "type": "string", "format": "uuid", "description": "Links to scripture_record" },
+        "strategy_id": { "type": "string", "format": "uuid", "description": "Links to defi_strategy" },
+        "church_id": { "type": "string", "format": "uuid", "description": "Links to church_record" },
+        "amount_wei": { "type": "string", "pattern": "^\\d+$", "description": "Transaction amount in wei" }
+      }
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  }
+}
