@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/v1/wallet_record.schema.json",
+  "title": "WalletRecord",
+  "description": "BibleFi wallet record representing an EVM-compatible wallet participating in the BibleFi protocol.",
+  "type": "object",
+  "required": ["wallet_id", "schema_version", "address", "chain_ids", "wallet_type"],
+  "additionalProperties": false,
+  "properties": {
+    "wallet_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this wallet record."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the wallet_record schema used.",
+      "examples": ["1.0.0"]
+    },
+    "address": {
+      "type": "string",
+      "pattern": "^0x[0-9a-fA-F]{40}$",
+      "description": "Primary EVM-compatible wallet address."
+    },
+    "chain_ids": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "uniqueItems": true,
+      "description": "List of EIP-155 chain IDs this wallet is active on."
+    },
+    "wallet_type": {
+      "type": "string",
+      "enum": ["eoa", "multisig", "smart_wallet", "hardware"],
+      "description": "Classification of the wallet type."
+    },
+    "ens_name": {
+      "type": "string",
+      "description": "ENS or other name-service domain associated with this wallet address."
+    },
+    "label": {
+      "type": "string",
+      "description": "Human-readable label for this wallet (internal use)."
+    },
+    "owner_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID reference to the user_profile that owns this wallet."
+    },
+    "church_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID reference to a church_record if this wallet belongs to a church."
+    },
+    "balance_snapshot": {
+      "type": "object",
+      "description": "Point-in-time snapshot of wallet token balances.",
+      "required": ["captured_at"],
+      "additionalProperties": false,
+      "properties": {
+        "captured_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when this balance snapshot was taken."
+        },
+        "tokens": {
+          "type": "array",
+          "description": "List of token balances at snapshot time.",
+          "items": {
+            "type": "object",
+            "required": ["symbol", "amount"],
+            "additionalProperties": false,
+            "properties": {
+              "symbol": {
+                "type": "string",
+                "description": "Token ticker symbol (e.g. 'ETH', 'USDC')."
+              },
+              "contract_address": {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{40}$",
+                "description": "EVM contract address of the token. Omit for native currency."
+              },
+              "amount": {
+                "type": "string",
+                "description": "Token balance as a string to preserve precision (e.g. '1234567890000000000' wei)."
+              },
+              "amount_usd": {
+                "type": "number",
+                "minimum": 0,
+                "description": "USD value of this token balance at snapshot time."
+              }
+            }
+          }
+        }
+      }
+    },
+    "is_treasury": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this wallet serves as a church treasury."
+    },
+    "verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this wallet has been verified by the BibleFi protocol."
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true,
+      "description": "Searchable tags for this wallet."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when this record was created."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of the most recent update."
+    }
+  }
+}

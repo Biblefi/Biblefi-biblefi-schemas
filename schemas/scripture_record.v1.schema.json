@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/v1/scripture_record.schema.json",
+  "title": "ScriptureRecord",
+  "description": "DEPRECATED: v1.0.0. Retained until 2028-03 for backward compatibility. Use scripture_record v3.0.0 (https://schemas.biblefi.io/v3/scripture_record.schema.json) for all new records.",
+  "type": "object",
+  "required": ["record_id", "schema_version", "book", "chapter", "verses", "translation", "text"],
+  "additionalProperties": false,
+  "properties": {
+    "record_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this scripture record."
+    },
+    "schema_version": {
+      "type": "string",
+      "description": "Semantic version of the schema (should be '1.0.0' for v1 records).",
+      "examples": ["1.0.0"]
+    },
+    "book": {
+      "type": "string",
+      "description": "Name of the biblical book."
+    },
+    "chapter": {
+      "type": "string",
+      "description": "Chapter identifier."
+    },
+    "verses": {
+      "type": "string",
+      "description": "Verse reference as a string (e.g. '16', '1-5')."
+    },
+    "translation": {
+      "type": "object",
+      "description": "Translation metadata.",
+      "required": ["abbreviation", "full_name", "language"],
+      "additionalProperties": false,
+      "properties": {
+        "abbreviation": {
+          "type": "string",
+          "description": "Short translation abbreviation (e.g. 'KJV')."
+        },
+        "full_name": {
+          "type": "string",
+          "description": "Full name of the translation."
+        },
+        "language": {
+          "type": "string",
+          "description": "Language code."
+        }
+      }
+    },
+    "text": {
+      "type": "string",
+      "description": "Scripture text."
+    }
+  }
+}

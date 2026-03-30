@@ -1,1 +1,157 @@
-
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/v1/defi_strategy.schema.json",
+  "title": "DeFiStrategy",
+  "description": "BibleFi DeFi tithing and giving strategy record. Describes how a church or individual routes and grows digital assets according to biblical stewardship principles.",
+  "type": "object",
+  "required": ["strategy_id", "schema_version", "name", "strategy_type"],
+  "additionalProperties": false,
+  "properties": {
+    "strategy_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this DeFi strategy."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the defi_strategy schema used.",
+      "examples": ["1.0.0"]
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable name for this strategy."
+    },
+    "strategy_type": {
+      "type": "string",
+      "enum": [
+        "yield_farming",
+        "liquidity_provision",
+        "staking",
+        "lending",
+        "dollar_cost_averaging",
+        "tithe_routing",
+        "endowment",
+        "impact_fund"
+      ],
+      "description": "Classification of the DeFi strategy type."
+    },
+    "church_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Optional reference to the church this strategy is associated with."
+    },
+    "wallet_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Optional reference to the wallet record executing this strategy."
+    },
+    "target_apy_bps": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 50000,
+      "description": "Target annual percentage yield in basis points (1 bps = 0.01%). Max 50000 = 500%."
+    },
+    "risk_tier": {
+      "type": "string",
+      "enum": ["conservative", "moderate", "aggressive", "experimental"],
+      "description": "Risk classification of this strategy."
+    },
+    "protocols": {
+      "type": "array",
+      "description": "List of DeFi protocols used in this strategy with allocation weights.",
+      "items": {
+        "type": "object",
+        "required": ["protocol_name", "chain_id", "contract_address", "allocation_bps"],
+        "additionalProperties": false,
+        "properties": {
+          "protocol_name": {
+            "type": "string",
+            "description": "Name of the DeFi protocol (e.g. 'Aave', 'Uniswap', 'Compound')."
+          },
+          "chain_id": {
+            "type": "integer",
+            "description": "EIP-155 chain ID where this protocol is deployed."
+          },
+          "contract_address": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$",
+            "description": "EVM contract address of the protocol entry point."
+          },
+          "allocation_bps": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000,
+            "description": "Percentage of strategy assets allocated to this protocol, in basis points."
+          }
+        }
+      }
+    },
+    "rebalance_frequency": {
+      "type": "string",
+      "enum": ["daily", "weekly", "monthly", "quarterly", "on_threshold"],
+      "description": "How often the strategy portfolio should be rebalanced."
+    },
+    "rebalance_threshold_bps": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5000,
+      "description": "Drift threshold in basis points that triggers a rebalance when rebalance_frequency is 'on_threshold'."
+    },
+    "ethical_filters": {
+      "type": "array",
+      "description": "Ethical constraints applied to asset selection in this strategy.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "no_gambling",
+          "no_alcohol",
+          "no_weapons",
+          "no_adult_content",
+          "carbon_neutral",
+          "sharia_compliant"
+        ]
+      }
+    },
+    "tithe_percentage_bps": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000,
+      "description": "Percentage of strategy yield automatically directed as tithe, in basis points."
+    },
+    "auto_tithe_enabled": {
+      "type": "boolean",
+      "description": "Whether automatic tithe routing from strategy yield is enabled."
+    },
+    "exit_conditions": {
+      "type": "object",
+      "description": "Conditions that trigger an automatic strategy exit to protect capital.",
+      "additionalProperties": false,
+      "properties": {
+        "max_drawdown_bps": {
+          "type": "integer",
+          "description": "Maximum tolerable drawdown in basis points before exiting."
+        },
+        "min_liquidity_usd": {
+          "type": "number",
+          "description": "Minimum USD liquidity in the protocol pool before exiting."
+        },
+        "stop_loss_enabled": {
+          "type": "boolean",
+          "description": "Whether stop-loss automation is active."
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when this strategy was created."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of the most recent update."
+    }
+  }
+}

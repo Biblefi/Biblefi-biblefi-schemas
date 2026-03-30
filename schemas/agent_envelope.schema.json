@@ -1,1 +1,107 @@
-
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/v1/agent_envelope.schema.json",
+  "title": "AgentEnvelope",
+  "description": "Universal wrapper/envelope for all BibleFi agent payloads. Every message exchanged between BibleFi agents must be wrapped in this envelope.",
+  "type": "object",
+  "required": ["envelope_id", "schema_version", "payload_type", "payload", "agent_id", "issued_at"],
+  "additionalProperties": false,
+  "properties": {
+    "envelope_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this envelope instance."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the envelope schema being used.",
+      "examples": ["1.0.0"]
+    },
+    "payload_type": {
+      "type": "string",
+      "enum": [
+        "scripture_record",
+        "church_record",
+        "defi_strategy",
+        "security_finding",
+        "wallet_record",
+        "user_profile",
+        "generic"
+      ],
+      "description": "Discriminator indicating the type of payload contained in this envelope."
+    },
+    "payload": {
+      "type": "object",
+      "description": "The actual payload object. Must conform to the schema indicated by payload_type.",
+      "additionalProperties": true
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "Identifier of the agent that issued this envelope. May be a DID, address, or service name."
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when this envelope was issued."
+    },
+    "correlation_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Optional correlation identifier for tracing related envelopes across services."
+    },
+    "trace_id": {
+      "type": "string",
+      "description": "Optional distributed trace identifier (e.g. OpenTelemetry trace ID)."
+    },
+    "ttl_seconds": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Optional time-to-live in seconds. Consumers should reject envelopes whose issued_at + ttl_seconds is in the past."
+    },
+    "signature": {
+      "type": "object",
+      "description": "Optional cryptographic signature over the canonical JSON serialization of the payload.",
+      "required": ["algorithm", "public_key", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "enum": ["ed25519", "secp256k1", "rsa-pss"],
+          "description": "The signing algorithm used."
+        },
+        "public_key": {
+          "type": "string",
+          "description": "Hex- or base58-encoded public key corresponding to the signing key."
+        },
+        "value": {
+          "type": "string",
+          "description": "Hex- or base64-encoded signature bytes."
+        }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "description": "Optional cross-chain routing metadata for bridge-aware message delivery.",
+      "additionalProperties": false,
+      "properties": {
+        "source_chain_id": {
+          "type": "integer",
+          "description": "EIP-155 chain ID of the originating network."
+        },
+        "target_chain_id": {
+          "type": "integer",
+          "description": "EIP-155 chain ID of the destination network."
+        },
+        "bridge_protocol": {
+          "type": "string",
+          "description": "Name of the bridge protocol used (e.g. 'LayerZero', 'Wormhole', 'Base Bridge')."
+        },
+        "gas_limit": {
+          "type": "integer",
+          "description": "Optional gas limit for the cross-chain message execution."
+        }
+      }
+    }
+  }
+}
