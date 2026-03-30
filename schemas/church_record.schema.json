@@ -1,1 +1,139 @@
-
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/v1/church_record.schema.json",
+  "title": "ChurchRecord",
+  "description": "BibleFi canonical record representing a church or faith community participating in the BibleFi protocol.",
+  "type": "object",
+  "required": ["church_id", "schema_version", "name", "denomination"],
+  "additionalProperties": false,
+  "properties": {
+    "church_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this church record."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the church_record schema used.",
+      "examples": ["1.0.0"]
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Official name of the church or faith community."
+    },
+    "denomination": {
+      "type": "string",
+      "description": "Denominational affiliation or tradition (e.g. 'Baptist', 'Catholic', 'Pentecostal', 'Non-denominational')."
+    },
+    "country": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}$",
+      "description": "ISO 3166-1 alpha-2 country code where the church is registered."
+    },
+    "state_province": {
+      "type": "string",
+      "description": "State, province, or region where the church is located."
+    },
+    "city": {
+      "type": "string",
+      "description": "City where the church is located."
+    },
+    "wallet_address": {
+      "type": "string",
+      "pattern": "^0x[0-9a-fA-F]{40}$",
+      "description": "Primary EVM-compatible wallet address for the church."
+    },
+    "treasury_wallet": {
+      "type": "string",
+      "pattern": "^0x[0-9a-fA-F]{40}$",
+      "description": "Dedicated treasury wallet address for tithe and offering receipts."
+    },
+    "member_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Approximate number of active members."
+    },
+    "founded_year": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 2100,
+      "description": "Year the church was founded."
+    },
+    "website": {
+      "type": "string",
+      "format": "uri",
+      "description": "Official website URL."
+    },
+    "social_links": {
+      "type": "object",
+      "description": "Social media profile URLs.",
+      "additionalProperties": false,
+      "properties": {
+        "twitter": {
+          "type": "string",
+          "format": "uri",
+          "description": "Twitter/X profile URL."
+        },
+        "instagram": {
+          "type": "string",
+          "format": "uri",
+          "description": "Instagram profile URL."
+        },
+        "facebook": {
+          "type": "string",
+          "format": "uri",
+          "description": "Facebook page URL."
+        },
+        "youtube": {
+          "type": "string",
+          "format": "uri",
+          "description": "YouTube channel URL."
+        }
+      }
+    },
+    "tax_exempt_id": {
+      "type": "string",
+      "description": "Government-issued tax exemption identifier (e.g. US EIN for 501(c)(3) organizations)."
+    },
+    "governance_model": {
+      "type": "string",
+      "enum": ["elder_led", "congregational", "episcopal", "presbyterian", "apostolic", "dao"],
+      "description": "Church governance structure. 'dao' indicates on-chain decentralized governance."
+    },
+    "on_chain_id": {
+      "type": "string",
+      "pattern": "^0x[0-9a-fA-F]{40}$",
+      "description": "On-chain contract or identity address representing this church in the BibleFi protocol."
+    },
+    "ipfs_metadata_cid": {
+      "type": "string",
+      "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[A-Za-z2-7]{58})$",
+      "description": "IPFS CIDv0 or CIDv1 of extended church metadata stored off-chain."
+    },
+    "verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the church has been verified by the BibleFi protocol governance."
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true,
+      "description": "Searchable tags associated with this church (e.g. 'charismatic', 'urban', 'missions-focused')."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when this record was first created."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of the most recent update to this record."
+    }
+  }
+}

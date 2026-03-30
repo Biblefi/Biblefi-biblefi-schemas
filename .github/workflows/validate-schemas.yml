@@ -1,0 +1,46 @@
+name: Validate JSON Schemas
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate all schema files are valid JSON
+        run: |
+          count=0
+          failed=0
+          for schema in schemas/*.schema.json; do
+            if node -e "JSON.parse(require('fs').readFileSync('$schema','utf8'))"; then
+              echo "✅ PASS: $schema"
+              count=$((count + 1))
+            else
+              echo "❌ FAIL: $schema"
+              failed=$((failed + 1))
+            fi
+          done
+          echo ""
+          echo "---"
+          echo "✅ Passed: $count schemas"
+          if [ "$failed" -gt 0 ]; then
+            echo "❌ Failed: $failed schemas"
+            exit 1
+          fi
+          echo "All $count schemas are valid JSON."

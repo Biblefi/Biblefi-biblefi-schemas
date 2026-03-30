@@ -1,1 +1,1259 @@
-
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/v3/scripture_record.schema.json",
+  "title": "ScriptureRecord",
+  "description": "BibleFi canonical scripture record v3.0.0. The centerpiece schema providing cryptographically verifiable, AI-enriched, hermeneutically annotated, and on-chain attested scripture records for the BibleFi protocol.",
+  "type": "object",
+  "required": [
+    "record_id",
+    "schema_version",
+    "book",
+    "chapter",
+    "verses",
+    "translation",
+    "text",
+    "content_hash",
+    "canonical_fingerprint"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "record_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this scripture record."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the scripture_record schema used.",
+      "examples": ["3.0.0"]
+    },
+    "book": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Name of the biblical book (e.g. 'John', 'Genesis', 'Psalms')."
+    },
+    "chapter": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Chapter number within the book."
+    },
+    "verses": {
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Single verse number."
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1,
+          "description": "Explicit list of verse numbers (for non-contiguous selections)."
+        },
+        {
+          "type": "object",
+          "required": ["from", "to"],
+          "additionalProperties": false,
+          "description": "Inclusive verse range.",
+          "properties": {
+            "from": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "First verse in the range."
+            },
+            "to": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Last verse in the range."
+            }
+          }
+        }
+      ],
+      "description": "Verse reference: single integer, array of integers, or {from, to} range object."
+    },
+    "translation": {
+      "type": "object",
+      "description": "Metadata about the Bible translation used for this record.",
+      "required": ["abbreviation", "full_name", "language"],
+      "additionalProperties": false,
+      "properties": {
+        "abbreviation": {
+          "type": "string",
+          "description": "Short translation abbreviation (e.g. 'KJV', 'NIV', 'ESV', 'NASB')."
+        },
+        "full_name": {
+          "type": "string",
+          "description": "Full name of the translation (e.g. 'King James Version')."
+        },
+        "language": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}(-[A-Z]{2,3})?$",
+          "description": "BCP-47 language code (e.g. 'en', 'en-US', 'es', 'zh-CN')."
+        },
+        "year_published": {
+          "type": "integer",
+          "minimum": 1000,
+          "description": "Year the translation was first published."
+        },
+        "dialect": {
+          "type": "string",
+          "description": "Dialect or regional variant of the translation."
+        },
+        "manuscript_tradition": {
+          "type": "string",
+          "enum": [
+            "masoretic_text",
+            "septuagint",
+            "textus_receptus",
+            "nestle_aland",
+            "dead_sea_scrolls",
+            "vulgate",
+            "other"
+          ],
+          "description": "Primary manuscript tradition underlying this translation."
+        },
+        "original_language": {
+          "type": "string",
+          "enum": ["hebrew", "greek", "aramaic", "latin", "other"],
+          "description": "Original language of the source text."
+        }
+      }
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Full scripture text as a UTF-8 string. Must be NFC-normalized and trimmed for content_hash computation."
+    },
+    "content_hash": {
+      "type": "string",
+      "pattern": "^0x[0-9a-fA-F]{64}$",
+      "description": "Keccak-256 hash of the NFC-normalized, trimmed UTF-8 scripture text. Computation: (1) NFC-normalize the text string, (2) trim leading/trailing whitespace, (3) encode to UTF-8 bytes, (4) compute keccak256 of the bytes, (5) hex-encode with '0x' prefix. This provides tamper-evident integrity for the canonical text."
+    },
+    "canonical_fingerprint": {
+      "type": "object",
+      "description": "Multi-algorithm composite fingerprint providing tamper-evident canonical identity for this scripture record. Combines SHA3-256, BLAKE3, and a bitmask for efficient lookup and verification.",
+      "required": ["sha3_256", "blake3", "verse_bitmask", "canonical_key", "algorithm_version"],
+      "additionalProperties": false,
+      "properties": {
+        "sha3_256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA3-256 (Keccak-256 variant) of the canonical string '{book}:{chapter}:{verse_key}:{translation_abbreviation}:{content_hash}' where verse_key is the canonical verse string (e.g. '16' for single verse, '1-5' for range, '1,3,5' for list)."
+        },
+        "blake3": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "BLAKE3 hash of the same canonical string used for sha3_256. BLAKE3 is faster and modern; used as a parallel integrity check."
+        },
+        "verse_bitmask": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]+$",
+          "description": "Hex-encoded bitmask where each bit represents the presence of a canonical verse within the chapter. Bit N (0-indexed from LSB) is set if verse N+1 is present in this record. Enables efficient sparse range queries across scripture indexes."
+        },
+        "canonical_key": {
+          "type": "string",
+          "pattern": "^[A-Z][a-z]+:\\d+:[0-9,\\-]+:[A-Z]{2,6}$",
+          "description": "Human-readable canonical key uniquely identifying this scripture record. Format: '{Book}:{chapter}:{verse_key}:{TRANSLATION}'. Example: 'John:3:16:KJV'."
+        },
+        "algorithm_version": {
+          "type": "string",
+          "default": "1.0",
+          "description": "Version of the canonical fingerprinting algorithm used to compute this fingerprint."
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "description": "Source provenance and licensing metadata for this scripture text.",
+      "additionalProperties": false,
+      "properties": {
+        "source_organization": {
+          "type": "string",
+          "description": "Organization that digitized or published this translation (e.g. 'American Bible Society')."
+        },
+        "source_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the original source."
+        },
+        "license": {
+          "type": "string",
+          "enum": ["public_domain", "CC0", "CC_BY", "CC_BY_SA", "proprietary", "fair_use"],
+          "description": "License governing use of this text."
+        },
+        "copyright_year": {
+          "type": "integer",
+          "minimum": 1000,
+          "description": "Year of copyright for this translation."
+        },
+        "attribution_required": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether attribution to the source is required when using this text."
+        },
+        "digitization_source": {
+          "type": "string",
+          "description": "Description of how this text was digitized (e.g. 'OCR from 1611 folio', 'API import from YouVersion')."
+        }
+      }
+    },
+    "ai_metadata": {
+      "type": "object",
+      "description": "AI-generated analytical metadata for this scripture record.",
+      "additionalProperties": false,
+      "properties": {
+        "embedding_model": {
+          "type": "string",
+          "description": "Name of the embedding model used (e.g. 'text-embedding-3-large')."
+        },
+        "embedding_version": {
+          "type": "string",
+          "description": "Version identifier of the embedding model."
+        },
+        "embedding_dimensions": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Dimensionality of the embedding vector."
+        },
+        "semantic_clusters": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "description": "Semantic cluster labels this scripture record belongs to."
+        },
+        "sentiment_score": {
+          "type": "number",
+          "minimum": -1.0,
+          "maximum": 1.0,
+          "description": "Sentiment valence score from -1.0 (deepest lament) to +1.0 (highest praise)."
+        },
+        "reading_level": {
+          "type": "object",
+          "description": "Readability metrics for this scripture text.",
+          "additionalProperties": false,
+          "properties": {
+            "flesch_kincaid_grade": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Flesch-Kincaid grade level."
+            },
+            "flesch_reading_ease": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Flesch Reading Ease score (0-100, higher = easier)."
+            },
+            "grade_label": {
+              "type": "string",
+              "enum": ["elementary", "middle_school", "high_school", "college", "graduate"],
+              "description": "Human-readable grade level classification."
+            }
+          }
+        },
+        "theological_themes": {
+          "type": "array",
+          "description": "Detected theological themes with confidence scores.",
+          "items": {
+            "type": "object",
+            "required": ["theme", "confidence"],
+            "additionalProperties": false,
+            "properties": {
+              "theme": {
+                "type": "string",
+                "enum": [
+                  "soteriology",
+                  "eschatology",
+                  "ecclesiology",
+                  "pneumatology",
+                  "christology",
+                  "theodicy",
+                  "anthropology",
+                  "hamartiology",
+                  "cosmology",
+                  "ethics",
+                  "worship",
+                  "stewardship",
+                  "missions",
+                  "covenant",
+                  "kingdom",
+                  "wisdom",
+                  "law",
+                  "prophecy",
+                  "apocalyptic"
+                ],
+                "description": "Theological discipline or theme."
+              },
+              "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Model confidence score (0.0–1.0)."
+              }
+            }
+          }
+        },
+        "named_entities": {
+          "type": "array",
+          "description": "Named entities extracted from the scripture text.",
+          "items": {
+            "type": "object",
+            "required": ["name", "type"],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The entity name as it appears in the text."
+              },
+              "type": {
+                "type": "string",
+                "enum": ["person", "place", "nation", "deity", "artifact", "event", "time_period"],
+                "description": "Entity type classification."
+              },
+              "biblical_id": {
+                "type": "string",
+                "description": "Optional cross-reference ID in a biblical entity database."
+              }
+            }
+          }
+        },
+        "lexical_density": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Ratio of unique content words to total words. Measures informational richness of the text."
+        },
+        "intertextuality_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Normalized count of detectable cross-references to other canonical texts. Indicates the degree of intertextual weaving within the biblical corpus."
+        }
+      }
+    },
+    "cross_references": {
+      "type": "array",
+      "description": "Cross-references to other scripture passages.",
+      "items": {
+        "type": "object",
+        "required": ["book", "chapter", "verses", "relationship"],
+        "additionalProperties": false,
+        "properties": {
+          "book": {
+            "type": "string",
+            "description": "Book of the cross-referenced passage."
+          },
+          "chapter": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Chapter of the cross-referenced passage."
+          },
+          "verses": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "uniqueItems": true,
+                "minItems": 1
+              },
+              {
+                "type": "object",
+                "required": ["from", "to"],
+                "additionalProperties": false,
+                "properties": {
+                  "from": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "to": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            ]
+          },
+          "relationship": {
+            "type": "string",
+            "enum": [
+              "parallel",
+              "fulfillment",
+              "quotation",
+              "allusion",
+              "type_antitype",
+              "contrast",
+              "background",
+              "expansion",
+              "chiasm",
+              "inclusio"
+            ],
+            "description": "Hermeneutical relationship between this text and the cross-reference."
+          },
+          "strength": {
+            "type": "string",
+            "enum": ["explicit", "probable", "possible"],
+            "default": "possible",
+            "description": "Confidence in the cross-reference relationship."
+          },
+          "direction": {
+            "type": "string",
+            "enum": ["forward", "backward", "bidirectional"],
+            "default": "bidirectional",
+            "description": "Temporal direction of the cross-reference relationship."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Explanatory notes about this cross-reference."
+          },
+          "confidence_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Numerical confidence score for this cross-reference (0.0–1.0)."
+          }
+        }
+      }
+    },
+    "translation_graph": {
+      "type": "array",
+      "description": "Parallel translations of this scripture passage enabling comparative analysis.",
+      "items": {
+        "type": "object",
+        "required": ["abbreviation", "language", "text"],
+        "additionalProperties": false,
+        "properties": {
+          "abbreviation": {
+            "type": "string",
+            "description": "Translation abbreviation."
+          },
+          "language": {
+            "type": "string",
+            "description": "BCP-47 language code."
+          },
+          "text": {
+            "type": "string",
+            "description": "Scripture text in this translation."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{64}$",
+            "description": "Keccak-256 content hash of this translation's text."
+          },
+          "year_published": {
+            "type": "integer",
+            "description": "Year this translation was published."
+          },
+          "semantic_similarity_to_primary": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Cosine similarity between this translation's embedding and the primary text's embedding."
+          },
+          "notable_differences": {
+            "type": "string",
+            "description": "Notable theological or textual differences from the primary translation."
+          },
+          "back_translation_divergence_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Score measuring how much a back-translation to the source language would diverge from the original. Higher values indicate less literal translations. Measures translation faithfulness."
+          }
+        }
+      }
+    },
+    "attestations": {
+      "type": "array",
+      "description": "On-chain attestations linking this scripture record to blockchain transactions and NFTs.",
+      "items": {
+        "type": "object",
+        "required": ["chain_id", "contract_address", "attestation_type"],
+        "additionalProperties": false,
+        "properties": {
+          "chain_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "EIP-155 chain ID."
+          },
+          "contract_address": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$",
+            "description": "EVM contract address of the attestation."
+          },
+          "token_id": {
+            "type": "string",
+            "description": "NFT or token ID if applicable."
+          },
+          "tx_hash": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{64}$",
+            "description": "Transaction hash of the attestation transaction."
+          },
+          "attestation_type": {
+            "type": "string",
+            "enum": [
+              "nft_mint",
+              "eas_attestation",
+              "hypercert",
+              "poap",
+              "sbt",
+              "merkle_leaf",
+              "custom"
+            ],
+            "description": "Type of on-chain attestation."
+          },
+          "block_number": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Block number when the attestation was confirmed."
+          },
+          "ipfs_cid": {
+            "type": "string",
+            "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[A-Za-z2-7]{58})$",
+            "description": "IPFS CIDv0 or CIDv1 of off-chain metadata associated with this attestation."
+          },
+          "attested_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of the attestation."
+          },
+          "attested_by": {
+            "type": "string",
+            "description": "Address or DID of the attesting entity."
+          },
+          "merkle_proof": {
+            "type": "object",
+            "description": "Merkle proof for merkle_leaf attestation type.",
+            "additionalProperties": false,
+            "properties": {
+              "root": {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{64}$",
+                "description": "Merkle root hash."
+              },
+              "proof": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^0x[0-9a-fA-F]{64}$"
+                },
+                "description": "Array of sibling hashes forming the Merkle proof path."
+              },
+              "leaf_index": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "0-indexed position of this leaf in the Merkle tree."
+              },
+              "total_leaves": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Total number of leaves in the Merkle tree."
+              }
+            }
+          }
+        }
+      }
+    },
+    "hermeneutics": {
+      "type": "object",
+      "description": "Hermeneutical metadata providing interpretive context for this scripture text.",
+      "additionalProperties": false,
+      "properties": {
+        "literary_genre": {
+          "type": "string",
+          "enum": [
+            "narrative",
+            "poetry",
+            "prophecy",
+            "epistle",
+            "apocalyptic",
+            "wisdom",
+            "law",
+            "gospel",
+            "genealogy",
+            "hymn",
+            "lament",
+            "oracle"
+          ],
+          "description": "Primary literary genre of this text."
+        },
+        "speech_act": {
+          "type": "string",
+          "enum": [
+            "promise",
+            "command",
+            "warning",
+            "blessing",
+            "curse",
+            "prayer",
+            "doxology",
+            "question",
+            "lament",
+            "declaration",
+            "invitation",
+            "commissioning"
+          ],
+          "description": "Primary speech act performed by this text."
+        },
+        "covenant_context": {
+          "type": "string",
+          "enum": [
+            "adamic",
+            "noahic",
+            "abrahamic",
+            "mosaic",
+            "davidic",
+            "new_covenant",
+            "pre-fall",
+            "eschatological"
+          ],
+          "description": "Covenantal context within biblical-theological history."
+        },
+        "canonical_position": {
+          "type": "string",
+          "enum": [
+            "ot_law",
+            "ot_history",
+            "ot_wisdom",
+            "ot_prophecy",
+            "nt_gospel",
+            "nt_acts",
+            "nt_epistle",
+            "nt_apocalyptic"
+          ],
+          "description": "Position within the canonical structure of the Bible."
+        },
+        "christological_significance": {
+          "type": "string",
+          "description": "Description of the Christological significance or Christ-centered interpretation of this text."
+        },
+        "typology": {
+          "type": "object",
+          "description": "Typological relationship between this text (type) and its fulfillment (antitype).",
+          "additionalProperties": false,
+          "properties": {
+            "type_text": {
+              "type": "object",
+              "description": "The type (OT foreshadowing) passage reference.",
+              "required": ["book", "chapter", "verses"],
+              "additionalProperties": false,
+              "properties": {
+                "book": {
+                  "type": "string"
+                },
+                "chapter": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "verses": {
+                  "oneOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "uniqueItems": true,
+                      "minItems": 1
+                    },
+                    {
+                      "type": "object",
+                      "required": ["from", "to"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "from": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "to": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "antitype_text": {
+              "type": "object",
+              "description": "The antitype (NT fulfillment) passage reference.",
+              "required": ["book", "chapter", "verses"],
+              "additionalProperties": false,
+              "properties": {
+                "book": {
+                  "type": "string"
+                },
+                "chapter": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "verses": {
+                  "oneOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "uniqueItems": true,
+                      "minItems": 1
+                    },
+                    {
+                      "type": "object",
+                      "required": ["from", "to"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "from": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "to": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "typological_category": {
+              "type": "string",
+              "enum": ["person", "institution", "event", "office", "object"],
+              "description": "Category of typological correspondence."
+            }
+          }
+        },
+        "interpretive_traditions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "reformed",
+              "lutheran",
+              "catholic",
+              "eastern_orthodox",
+              "arminian",
+              "anabaptist",
+              "pentecostal",
+              "dispensational",
+              "covenant_theology",
+              "new_perspective"
+            ]
+          },
+          "description": "Christian interpretive traditions with notable readings of this passage."
+        },
+        "original_language_notes": {
+          "type": "array",
+          "description": "Word-level original language annotations.",
+          "items": {
+            "type": "object",
+            "required": ["word", "language"],
+            "additionalProperties": false,
+            "properties": {
+              "word": {
+                "type": "string",
+                "description": "The word in its original language script."
+              },
+              "language": {
+                "type": "string",
+                "enum": ["hebrew", "greek", "aramaic"],
+                "description": "Original language of this word."
+              },
+              "transliteration": {
+                "type": "string",
+                "description": "Romanized transliteration."
+              },
+              "strongs_id": {
+                "type": "string",
+                "pattern": "^[HG]\\d+$",
+                "description": "Strong's Concordance identifier (e.g. 'H3068', 'G26')."
+              },
+              "gloss": {
+                "type": "string",
+                "description": "Brief English gloss or translation of the word."
+              },
+              "semantic_domain": {
+                "type": "string",
+                "description": "Semantic domain classification (e.g. 'love', 'divine names', 'eschatology')."
+              },
+              "morphology": {
+                "type": "string",
+                "description": "Morphological parsing string (e.g. 'verb:qal:perfect:3ms', 'noun:masculine:singular:nominative')."
+              }
+            }
+          }
+        }
+      }
+    },
+    "linguistic_analysis": {
+      "type": "object",
+      "description": "Advanced computational linguistics metadata providing quantitative analysis of this scripture text.",
+      "additionalProperties": false,
+      "properties": {
+        "hapax_legomena": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Words appearing only once in the entire biblical corpus relevant to this translation."
+        },
+        "word_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total word count of this scripture text."
+        },
+        "unique_word_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of unique (distinct) words in this text."
+        },
+        "avg_word_length": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Average number of characters per word."
+        },
+        "syntactic_complexity_index": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Normalized syntactic complexity score (0–1) computed as (max_parse_depth/10 + subordinate_clause_ratio + participial_density_ratio) / 3. Combines clause depth, subordinate clause ratio, and participial density."
+        },
+        "parallelism_type": {
+          "type": "string",
+          "enum": [
+            "synonymous",
+            "antithetic",
+            "synthetic",
+            "climactic",
+            "emblematic",
+            "chiastic",
+            "none"
+          ],
+          "description": "Type of Hebrew or Greek poetic parallelism present in this text, if any."
+        },
+        "discourse_unit": {
+          "type": "string",
+          "enum": [
+            "pericope",
+            "strophe",
+            "cola",
+            "verse_unit",
+            "paragraph",
+            "section"
+          ],
+          "description": "Smallest meaningful discourse unit this text represents."
+        },
+        "rhetorical_devices": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "anaphora",
+              "epistrophe",
+              "inclusio",
+              "chiasm",
+              "merism",
+              "hendiadys",
+              "litotes",
+              "hyperbole",
+              "irony",
+              "metaphor",
+              "simile",
+              "personification",
+              "apostrophe",
+              "rhetorical_question",
+              "asyndeton",
+              "polysyndeton"
+            ]
+          },
+          "description": "List of rhetorical devices identified in this text."
+        },
+        "tense_distribution": {
+          "type": "object",
+          "description": "Distribution of verb tenses in the text.",
+          "additionalProperties": false,
+          "properties": {
+            "past_ratio": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Proportion of past-tense verbs."
+            },
+            "present_ratio": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Proportion of present-tense verbs."
+            },
+            "future_ratio": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Proportion of future-tense verbs. Note: past_ratio + present_ratio + future_ratio must be ≤ 1.0."
+            }
+          }
+        }
+      }
+    },
+    "theological_graph": {
+      "type": "object",
+      "description": "Graph-theoretic representation of theological concept relationships within this text. Enables structured reasoning over doctrine, ethics, and redemptive themes.",
+      "additionalProperties": false,
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "description": "Theological concept nodes in the graph.",
+          "items": {
+            "type": "object",
+            "required": ["id", "concept"],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]+$",
+                "description": "Unique identifier for this node within the graph."
+              },
+              "concept": {
+                "type": "string",
+                "description": "Human-readable theological concept label."
+              },
+              "concept_type": {
+                "type": "string",
+                "enum": [
+                  "divine_attribute",
+                  "human_condition",
+                  "salvific_action",
+                  "eschatological_reality",
+                  "ethical_imperative",
+                  "covenantal_term",
+                  "christological_title",
+                  "pneumatological_work"
+                ],
+                "description": "Theological category of this concept."
+              },
+              "weight": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Semantic centrality weight of this concept within the text (0.0–1.0)."
+              }
+            }
+          }
+        },
+        "edges": {
+          "type": "array",
+          "description": "Directed relationships between theological concepts.",
+          "items": {
+            "type": "object",
+            "required": ["source", "target", "relationship"],
+            "additionalProperties": false,
+            "properties": {
+              "source": {
+                "type": "string",
+                "description": "ID of the source concept node."
+              },
+              "target": {
+                "type": "string",
+                "description": "ID of the target concept node."
+              },
+              "relationship": {
+                "type": "string",
+                "enum": [
+                  "causes",
+                  "implies",
+                  "contrasts",
+                  "fulfills",
+                  "prefigures",
+                  "defines",
+                  "requires",
+                  "enables",
+                  "negates"
+                ],
+                "description": "Type of theological relationship from source to target."
+              },
+              "strength": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Strength of the relationship (0.0–1.0)."
+              }
+            }
+          }
+        },
+        "centrality_scores": {
+          "type": "object",
+          "description": "Graph-level centrality metrics.",
+          "additionalProperties": false,
+          "properties": {
+            "most_central_concept": {
+              "type": "string",
+              "description": "ID of the most central node by betweenness centrality."
+            },
+            "graph_density": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Ratio of actual edges to maximum possible edges. Measures conceptual interconnectedness."
+            },
+            "clustering_coefficient": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Average local clustering coefficient. Measures tendency for concept clusters."
+            }
+          }
+        }
+      }
+    },
+    "canon_authority": {
+      "type": "object",
+      "description": "Multi-tradition canonical authority and textual transmission metadata for this scripture passage.",
+      "additionalProperties": false,
+      "properties": {
+        "protestant_canon": {
+          "type": "boolean",
+          "description": "Whether this text is part of the 66-book Protestant canon."
+        },
+        "catholic_deuterocanon": {
+          "type": "boolean",
+          "description": "Whether this text is deuterocanonical per Roman Catholic tradition."
+        },
+        "eastern_orthodox_additional": {
+          "type": "boolean",
+          "description": "Whether this text is in the additional books accepted by Eastern Orthodox churches."
+        },
+        "ethiopian_orthodox_additional": {
+          "type": "boolean",
+          "description": "Whether this text is unique to the Ethiopian Orthodox Tewahedo canon."
+        },
+        "textual_variants": {
+          "type": "array",
+          "description": "Known textual variants affecting this passage.",
+          "items": {
+            "type": "object",
+            "required": ["variant_id", "description"],
+            "additionalProperties": false,
+            "properties": {
+              "variant_id": {
+                "type": "string",
+                "description": "Identifier for this variant (e.g. 'P66-omit-v7')."
+              },
+              "description": {
+                "type": "string",
+                "description": "Description of the textual difference."
+              },
+              "manuscript_source": {
+                "type": "string",
+                "description": "Manuscript siglum or source (e.g. 'Codex Sinaiticus', 'P66')."
+              },
+              "variant_type": {
+                "type": "string",
+                "enum": [
+                  "addition",
+                  "omission",
+                  "substitution",
+                  "transposition",
+                  "orthographic"
+                ],
+                "description": "Type of textual variant."
+              },
+              "significance": {
+                "type": "string",
+                "enum": ["major", "minor", "trivial"],
+                "description": "Theological significance of this variant."
+              },
+              "modern_translations_affected": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Translation abbreviations of modern versions that reflect this variant."
+              }
+            }
+          }
+        },
+        "transmission_chain_hash": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$",
+          "description": "Keccak-256 hash of a concatenated ordered list of all known manuscript sigla for this passage. Provides a cryptographic fingerprint of the textual transmission history."
+        }
+      }
+    },
+    "defi_integration": {
+      "type": "object",
+      "description": "On-chain DeFi and tokenization integration metadata specific to the BibleFi protocol.",
+      "additionalProperties": false,
+      "properties": {
+        "tokenization_status": {
+          "type": "string",
+          "enum": ["not_tokenized", "pending", "tokenized", "fractionalized"],
+          "description": "Current tokenization status of this scripture record."
+        },
+        "primary_token_contract": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$",
+          "description": "EVM contract address of the primary NFT contract for this scripture."
+        },
+        "primary_token_id": {
+          "type": "string",
+          "description": "Token ID within the primary NFT contract."
+        },
+        "royalty_bps": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "Secondary sale royalty in basis points directed to the church treasury."
+        },
+        "tithe_routing": {
+          "type": "object",
+          "description": "Automatic tithe routing configuration for yield from this scripture NFT.",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether automatic tithe routing is active."
+            },
+            "destination_church_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID of the destination church_record."
+            },
+            "destination_wallet": {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]{40}$",
+              "description": "EVM wallet address where tithes are sent."
+            },
+            "tithe_percentage_bps": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000,
+              "description": "Tithe percentage in basis points."
+            },
+            "trigger": {
+              "type": "string",
+              "enum": ["on_mint", "on_transfer", "on_sale", "on_stake"],
+              "description": "Event that triggers tithe routing."
+            }
+          }
+        },
+        "impact_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Composite BibleFi impact score (0.0–1.0) measuring spiritual, social, and financial impact. Computed as weighted average: citation_frequency_normalized (weight 0.4) + community_engagement_ratio (weight 0.3) + missionary_reach_index (weight 0.3)."
+        },
+        "citation_frequency": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of times this verse has been cited or referenced in on-chain BibleFi transactions."
+        },
+        "stake_pool_address": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$",
+          "description": "Address of a BibleFi staking pool backed by this scripture NFT."
+        }
+      }
+    },
+    "revision_history": {
+      "type": "array",
+      "description": "Immutable audit trail of all changes to this scripture record.",
+      "items": {
+        "type": "object",
+        "required": ["revision_id", "changed_at", "change_type", "changed_by"],
+        "additionalProperties": false,
+        "properties": {
+          "revision_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for this revision entry."
+          },
+          "changed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of the change."
+          },
+          "change_type": {
+            "type": "string",
+            "enum": [
+              "text_correction",
+              "translation_update",
+              "metadata_update",
+              "attestation_added",
+              "hash_recomputed",
+              "schema_migration"
+            ],
+            "description": "Type of change made."
+          },
+          "changed_by": {
+            "type": "string",
+            "description": "Address or DID of the entity that made this change."
+          },
+          "content_hash_before": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{64}$",
+            "description": "Keccak-256 content hash of the text before this revision."
+          },
+          "content_hash_after": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{64}$",
+            "description": "Keccak-256 content hash of the text after this revision."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Human-readable notes describing the change."
+          }
+        }
+      }
+    },
+    "topics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true,
+      "description": "Searchable topic tags for this scripture record."
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true,
+      "description": "General-purpose tags for filtering and categorization."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when this record was first created."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of the most recent update."
+    }
+  }
+}
