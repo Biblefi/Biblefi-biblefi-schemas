@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/user_profile.schema.json",
+  "title": "UserProfile",
+  "description": "A BibleFi user profile representing an individual participant, church administrator, auditor, developer, or observer in the BibleFi ecosystem.",
+  "type": "object",
+  "required": ["user_id", "schema_version", "display_name", "role"],
+  "additionalProperties": false,
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique identifier for this user profile (UUID v4)."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the UserProfile schema used (e.g. '1.0.0').",
+      "examples": ["1.0.0"]
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable display name for this user."
+    },
+    "role": {
+      "type": "string",
+      "enum": ["individual", "church_admin", "auditor", "developer", "observer"],
+      "description": "The primary role of this user within the BibleFi ecosystem."
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Contact email address for this user."
+    },
+    "avatar_uri": {
+      "type": "string",
+      "format": "uri",
+      "description": "URI pointing to the user's avatar image."
+    },
+    "bio": {
+      "type": "string",
+      "description": "Short biography or description provided by the user."
+    },
+    "church_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the church_record this user is associated with."
+    },
+    "wallet_addresses": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^0x[0-9a-fA-F]{40}$"
+      },
+      "uniqueItems": true,
+      "description": "List of EVM wallet addresses associated with this user.",
+      "examples": [["0xAbCdEf0123456789AbCdEf0123456789AbCdEf01"]]
+    },
+    "preferred_translation": {
+      "type": "string",
+      "description": "Preferred Bible translation abbreviation (e.g. 'KJV', 'NIV', 'ESV').",
+      "examples": ["KJV", "NIV", "ESV"]
+    },
+    "notification_preferences": {
+      "type": "object",
+      "description": "User notification settings.",
+      "additionalProperties": false,
+      "properties": {
+        "email_enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to send email notifications to this user."
+        },
+        "on_chain_alerts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to notify the user of on-chain events affecting their wallets or church."
+        },
+        "security_alerts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to send security-related alerts (e.g. new security findings) to this user."
+        }
+      }
+    },
+    "verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this user account has been verified by the BibleFi platform."
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true,
+      "description": "Optional free-form tags for filtering or categorisation."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when this user profile was created."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when this user profile was last updated."
+    }
+  },
+  "examples": [
+    {
+      "user_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+      "schema_version": "1.0.0",
+      "display_name": "Pastor John",
+      "role": "church_admin",
+      "email": "pastor.john@gracechurch.org",
+      "church_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "wallet_addresses": ["0xAbCdEf0123456789AbCdEf0123456789AbCdEf01"],
+      "preferred_translation": "KJV",
+      "notification_preferences": {
+        "email_enabled": true,
+        "on_chain_alerts": true,
+        "security_alerts": true
+      },
+      "verified": true,
+      "tags": ["admin", "pastor"],
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-15T12:00:00Z"
+    }
+  ]
+}
