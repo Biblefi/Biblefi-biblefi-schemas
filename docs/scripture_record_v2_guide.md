@@ -351,9 +351,37 @@ The `zero_knowledge_proofs` section enables **privacy-preserving content members
 
 ```js
 // Poseidon commitment (pseudo-code)
+// `record.verses` is schema-valid as one of:
+//   - integer
+//   - integer[]
+//   - { from, to }
+// Encode it canonically before hashing so all valid shapes are supported.
+function encodeVerses(verses) {
+  if (Number.isInteger(verses)) {
+    return poseidon([0n, BigInt(verses)]);
+  }
+
+  if (Array.isArray(verses)) {
+    return poseidon([1n, ...verses.map((v) => BigInt(v))]);
+  }
+
+  if (
+    verses &&
+    typeof verses === 'object' &&
+    Number.isInteger(verses.from) &&
+    Number.isInteger(verses.to)
+  ) {
+    return poseidon([2n, BigInt(verses.from), BigInt(verses.to)]);
+  }
+
+  throw new TypeError('Invalid verses shape');
+}
+
+const versesCommitment = encodeVerses(record.verses);
+
 const commitment = poseidon([
   BigInt(record.chapter),
-  BigInt(record.verses),
+  versesCommitment,
   BigInt('0x' + record.content_hash.slice(2))
 ]);
 ```
@@ -390,11 +418,11 @@ John 3:16 appears as the Gospel reading on the Fourth Sunday of Lent in Year B o
 
 The `biblefi_rrule` object extends iCalendar RRULE with liturgical-calendar awareness. The `freq` values are purpose-built for liturgical recurrence patterns:
 
-- `LITURGICAL_WEEKLY` — recurs on a fixed day within a liturgical week
-- `LITURGICAL_ANNUAL` — recurs annually on the same feast or Sunday
-- `FEAST_DAY` — tied to a moveable feast (e.g., Easter, Pentecost)
-- `DAILY_OFFICE` — appears in a daily office lectionary
-- `LECTIO_CONTINUA` — part of a continuous sequential reading
+- `liturgical_weekly` — recurs on a fixed day within a liturgical week
+- `liturgical_annual` — recurs annually on the same feast or Sunday
+- `feast_day` — tied to a moveable feast (e.g., Easter, Pentecost)
+- `daily_office` — appears in a daily office lectionary
+- `lectio_continua` — part of a continuous sequential reading
 
 The `by_season` filter restricts recurrence to specific liturgical seasons, and `tradition_filter` limits the rule to specific traditions.
 
@@ -402,14 +430,19 @@ The `by_season` filter restricts recurrence to specific liturgical seasons, and 
 
 ### 4. `temporal_integrity`
 
-The `temporal_integrity` section tracks **content freshness** and surfaces **staleness signals** using a configurable decay model.
+The `temporal_integrity` section tracks **content freshness** and surfaces **staleness signals** using a configurable decay model. Four decay models are supported:
+
+- **`linear`** — `trust_decay_score` decreases at a constant rate from 1.0 to 0.0 over `verification_interval_days`.
+- **`exponential`** — `trust_decay_score` decreases exponentially from 1.0, providing a steeper initial drop.
+- **`step_function`** — `trust_decay_score` remains at 1.0 until `verification_interval_days` has elapsed, then drops abruptly to 0.0.
+- **`half_life`** — `trust_decay_score` halves every `half_life_days`, modelled on radioactive decay.
 
 **Half-life decay algorithm:**
 
 When `decay_model` is `"half_life"`, the `trust_decay_score` is computed as:
 
 ```
-trust_decay_score = 0.5 ^ ((now - last_verified_at) / half_life_days)
+trust_decay_score = pow(0.5, (now - last_verified_at) / half_life_days)
 is_stale = trust_decay_score < 0.2
 ```
 

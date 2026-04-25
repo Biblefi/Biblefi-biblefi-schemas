@@ -579,7 +579,7 @@
           "properties": {
             "freq": {
               "type": "string",
-              "enum": ["LITURGICAL_WEEKLY", "LITURGICAL_ANNUAL", "FEAST_DAY", "DAILY_OFFICE", "LECTIO_CONTINUA"]
+              "enum": ["liturgical_weekly", "liturgical_annual", "feast_day", "daily_office", "lectio_continua"]
             },
             "by_season": {
               "type": "array",
@@ -750,8 +750,8 @@
       "properties": {
         "syntax_tree_format": {
           "type": "string",
-          "enum": ["Penn_Treebank", "Universal_Dependencies", "RST", "HPSG", "LFG"],
-          "description": "Format of the syntax_tree_ref encoding."
+          "enum": ["penn_treebank", "universal_dependencies", "rst", "hpsg", "lfg"],
+          "description": "Normalized syntax tree format identifier for the syntax_tree_ref encoding."
         },
         "syntax_tree_ref": {
           "type": "string",
