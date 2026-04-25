@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.biblefi.io/scripture_record.schema.json",
   "title": "ScriptureRecord",
-  "description": "A canonicalised reference to a Bible passage, including its text, translation metadata, and optional on-chain attestation details.",
+  "description": "A canonicalised reference to a Bible passage, including its text, translation metadata, optional on-chain attestation details, financial theme keywords matched by the scripture_search agent, references to original-language source texts, and links to cross-language and theological validation records.",
   "type": "object",
   "required": ["record_id", "schema_version", "book", "chapter", "verses", "translation", "text"],
   "additionalProperties": false,
@@ -109,6 +109,54 @@
       },
       "uniqueItems": true,
       "description": "Theological or topical tags associated with this passage (e.g. 'faith', 'stewardship', 'prosperity')."
+    },
+    "financial_keywords": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true,
+      "description": "Financial theme keywords matched by the scripture_search agent during KJV traversal (e.g. 'debt', 'money', 'wealth', 'tithe', 'mammon', 'treasure', 'usury', 'silver', 'gold'). Populated by the agentic pipeline; empty array indicates no financial keywords were matched."
+    },
+    "original_language_refs": {
+      "type": "array",
+      "description": "References to this passage in its original Biblical languages (Hebrew, Greek, or Aramaic), captured by the language_validator subagent.",
+      "items": {
+        "type": "object",
+        "required": ["language", "source_text"],
+        "additionalProperties": false,
+        "properties": {
+          "language": {
+            "type": "string",
+            "enum": ["hebrew", "greek", "aramaic"],
+            "description": "The original language of this reference."
+          },
+          "source_text": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The passage text in its original script (e.g. Hebrew Unicode, Greek Unicode)."
+          },
+          "transliteration": {
+            "type": "string",
+            "description": "Optional romanised transliteration of the original-language text."
+          },
+          "source_corpus": {
+            "type": "string",
+            "description": "Name of the source corpus used (e.g. 'Westminster Leningrad Codex', 'NA28', 'Peshitta')."
+          }
+        }
+      }
+    },
+    "cross_language_validation_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the CrossLanguageValidation record produced by the language_validator agent for this scripture. Present only after the language validation stage of the agentic pipeline has completed."
+    },
+    "theological_validation_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the TheologicalValidation record produced by the theological_validator agent for this scripture. Present only after the theological validation stage of the agentic pipeline has completed."
     },
     "attestation": {
       "type": "object",

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.biblefi.io/agent_envelope.schema.json",
   "title": "AgentEnvelope",
-  "description": "Universal wrapper for all BibleFi agent messages and records. Every payload transmitted between agents or stored on-chain must be wrapped in this envelope.",
+  "description": "Universal wrapper for all BibleFi agent messages and records. Every payload transmitted between agents or stored on-chain must be wrapped in this envelope. Supports the full agentic scripture-pipeline including task orchestration, run logging, seed batches, and multi-language and theological validation.",
   "type": "object",
   "required": ["envelope_id", "schema_version", "created_at", "payload_type", "payload"],
   "additionalProperties": false,
@@ -37,6 +37,11 @@
         "security_finding",
         "wallet_record",
         "user_profile",
+        "agent_task",
+        "agent_run_log",
+        "scripture_seed_batch",
+        "cross_language_validation",
+        "theological_validation",
         "generic"
       ],
       "description": "Discriminator indicating which schema governs the contents of the 'payload' field."

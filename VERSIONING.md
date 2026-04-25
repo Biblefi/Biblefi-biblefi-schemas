@@ -70,8 +70,13 @@ Pre-release schemas **must not** be used in production deployments. They are pub
 
 | Schema | Current Version | Status |
 |--------|-----------------|--------|
-| `agent_envelope` | `1.0.0` | Stable |
-| `scripture_record` | `1.0.0` | Stable |
+| `agent_envelope` | `1.1.0` | Stable |
+| `scripture_record` | `1.1.0` | Stable |
+| `agent_task` | `1.0.0` | Stable |
+| `agent_run_log` | `1.0.0` | Stable |
+| `scripture_seed_batch` | `1.0.0` | Stable |
+| `cross_language_validation` | `1.0.0` | Stable |
+| `theological_validation` | `1.0.0` | Stable |
 | `church_record` | `1.0.0` | Stable |
 | `defi_strategy` | `1.0.0` | Stable |
 | `security_finding` | `1.0.0` | Stable |
