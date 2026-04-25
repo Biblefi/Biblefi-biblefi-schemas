@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/theological_validation.schema.json",
+  "title": "TheologicalValidation",
+  "description": "Records the result of consulting Biblical concordances and dictionaries to verify the theological accuracy and thematic alignment of a financially-themed ScriptureRecord. Produced by 'theological_validator' subagents as the final quality gate before records are seeded to the BibleFi dApp.",
+  "type": "object",
+  "required": ["validation_id", "schema_version", "scripture_record_id", "overall_status", "validated_at"],
+  "additionalProperties": false,
+  "properties": {
+    "validation_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique identifier for this theological validation record (UUID v4)."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the TheologicalValidation schema (e.g. '1.0.0').",
+      "examples": ["1.0.0"]
+    },
+    "scripture_record_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the ScriptureRecord this validation pertains to."
+    },
+    "cross_language_validation_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the CrossLanguageValidation record that preceded this theological check. Theological validation should only be performed on records that have already passed cross-language validation."
+    },
+    "concordance_references": {
+      "type": "array",
+      "description": "References from Biblical concordances that support or qualify the financial theme of this passage.",
+      "items": {
+        "type": "object",
+        "required": ["concordance", "entry", "relevance"],
+        "additionalProperties": false,
+        "properties": {
+          "concordance": {
+            "type": "string",
+            "description": "Name of the concordance consulted.",
+            "examples": ["Strong's Exhaustive Concordance", "Young's Analytical Concordance", "Nave's Topical Bible"]
+          },
+          "entry": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The concordance entry or heading under which this passage appears (e.g. 'Money', 'Debt', 'Riches', 'Stewardship')."
+          },
+          "related_passages": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Canonical Bible references listed alongside this entry (e.g. 'Matthew 6:24', 'Luke 16:11')."
+            },
+            "description": "Other scripture references cross-listed under the same concordance entry, providing thematic context."
+          },
+          "relevance": {
+            "type": "string",
+            "enum": ["direct", "indirect", "contextual"],
+            "description": "How directly this concordance entry supports the financial theme classification."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional commentary on the concordance reference."
+          }
+        }
+      }
+    },
+    "dictionary_definitions": {
+      "type": "array",
+      "description": "Definitions from Biblical dictionaries or lexicons for key terms in this passage.",
+      "items": {
+        "type": "object",
+        "required": ["dictionary", "term", "definition"],
+        "additionalProperties": false,
+        "properties": {
+          "dictionary": {
+            "type": "string",
+            "description": "Name of the Biblical dictionary or lexicon consulted.",
+            "examples": [
+              "Vine's Complete Expository Dictionary",
+              "Baker's Evangelical Dictionary of Biblical Theology",
+              "TDNT (Theological Dictionary of the New Testament)",
+              "BDB (Brown-Driver-Briggs Hebrew Lexicon)"
+            ]
+          },
+          "term": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The Biblical term being defined (in English or original language)."
+          },
+          "definition": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The dictionary's definition of the term, capturing its theological and contextual meaning."
+          },
+          "financial_significance": {
+            "type": "string",
+            "description": "Explanation of how this term's definition confirms or illuminates the financial theme of the passage."
+          },
+          "strongs_number": {
+            "type": "string",
+            "pattern": "^[HG]\\d+$",
+            "description": "Optional Strong's reference number for the defined term."
+          }
+        }
+      }
+    },
+    "thematic_alignment": {
+      "type": "object",
+      "description": "Overall assessment of how well this passage aligns with the BibleFi financial theme.",
+      "additionalProperties": false,
+      "properties": {
+        "primary_theme": {
+          "type": "string",
+          "description": "The dominant financial theme identified for this passage (e.g. 'debt', 'stewardship', 'generosity', 'wealth', 'poverty', 'tithing', 'usury')."
+        },
+        "secondary_themes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "Additional financial sub-themes present in the passage."
+        },
+        "dapp_category": {
+          "type": "string",
+          "description": "The BibleFi dApp category under which this scripture should be displayed (e.g. 'Debt & Borrowing', 'Giving & Tithing', 'Wealth Management', 'Stewardship', 'Contentment')."
+        },
+        "alignment_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Numeric score representing how strongly this passage supports the financial theme (0.0 = no alignment, 1.0 = perfect alignment)."
+        },
+        "contextual_notes": {
+          "type": "string",
+          "description": "Theological commentary on the passage's financial theme within its broader Biblical context."
+        }
+      }
+    },
+    "overall_status": {
+      "type": "string",
+      "enum": ["validated", "partially_validated", "failed", "pending", "requires_review"],
+      "description": "Aggregate theological validation outcome. 'validated' means concordances and dictionaries confirm the financial theme; 'requires_review' means human theological oversight is recommended before seeding."
+    },
+    "reviewer_notes": {
+      "type": "string",
+      "description": "Optional notes from a human theological reviewer, if manual oversight was applied."
+    },
+    "validated_by_agent": {
+      "type": "string",
+      "description": "Identifier of the 'theological_validator' agent instance that produced this record."
+    },
+    "task_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the AgentTask that generated this validation record."
+    },
+    "validated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when this validation was completed."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when this record was created."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when this record was last updated."
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true,
+      "description": "Optional tags for filtering or categorisation."
+    }
+  },
+  "examples": [
+    {
+      "validation_id": "tv-2024-01-01-0001-uuid",
+      "schema_version": "1.0.0",
+      "scripture_record_id": "b2c3d4e5-0001-0001-0001-000000000001",
+      "cross_language_validation_id": "cv-2024-01-01-0001-uuid",
+      "concordance_references": [
+        {
+          "concordance": "Strong's Exhaustive Concordance",
+          "entry": "Debt",
+          "related_passages": ["Romans 13:8", "Matthew 18:27", "Proverbs 22:26"],
+          "relevance": "direct",
+          "notes": "Listed under 'debt' and 'borrower' entries. The passage is a primary proof-text for the principle that indebtedness creates relational obligation."
+        },
+        {
+          "concordance": "Nave's Topical Bible",
+          "entry": "Debts",
+          "related_passages": ["Deuteronomy 15:1", "Nehemiah 10:31", "Matthew 6:12"],
+          "relevance": "direct"
+        }
+      ],
+      "dictionary_definitions": [
+        {
+          "dictionary": "Vine's Complete Expository Dictionary",
+          "term": "borrower",
+          "definition": "One who takes on a financial obligation from another, creating a binding relational and legal duty to repay.",
+          "financial_significance": "Confirms that the borrower-lender dynamic in this passage carries explicit financial and social weight in the ancient Near Eastern context.",
+          "strongs_number": "H3867"
+        }
+      ],
+      "thematic_alignment": {
+        "primary_theme": "debt",
+        "secondary_themes": ["stewardship", "wealth inequality"],
+        "dapp_category": "Debt & Borrowing",
+        "alignment_score": 0.98,
+        "contextual_notes": "Proverbs 22:7 is one of the clearest statements in Scripture on the relational consequences of debt. Its inclusion in the BibleFi dApp's 'Debt & Borrowing' category is well-supported by multiple concordances and lexicons."
+      },
+      "overall_status": "validated",
+      "validated_by_agent": "theo-validator-01",
+      "task_id": "a1b2c3d4-0003-0003-0003-000000000001",
+      "validated_at": "2024-01-01T00:40:00Z",
+      "created_at": "2024-01-01T00:40:00Z",
+      "updated_at": "2024-01-01T00:40:00Z",
+      "tags": ["debt", "proverbs", "old-testament"]
+    }
+  ]
+}

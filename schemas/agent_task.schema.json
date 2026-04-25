@@ -1,0 +1,241 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/agent_task.schema.json",
+  "title": "AgentTask",
+  "description": "Specification for a single unit of work assigned to a BibleFi agent or subagent within the agentic scripture-pipeline framework. Each agent operates in an isolated sandbox environment and communicates exclusively through AgentEnvelope-wrapped AgentTask records.",
+  "type": "object",
+  "required": ["task_id", "schema_version", "agent_type", "status", "created_at"],
+  "additionalProperties": false,
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique identifier for this task (UUID v4)."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the AgentTask schema (e.g. '1.0.0').",
+      "examples": ["1.0.0"]
+    },
+    "agent_type": {
+      "type": "string",
+      "enum": [
+        "master",
+        "scripture_search",
+        "language_validator",
+        "theological_validator",
+        "dapp_seeder"
+      ],
+      "description": "Category of agent performing this task. 'master' orchestrates the hourly pipeline; 'scripture_search' traverses the KJV for financially-themed passages; 'language_validator' cross-references original Hebrew, Greek, and Aramaic texts; 'theological_validator' consults concordances and dictionaries; 'dapp_seeder' formats and pushes validated records to the BibleFi dApp."
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "Unique runtime identifier of the agent instance executing this task (e.g. 'master-agent-001', 'lang-validator-heb-02')."
+    },
+    "parent_task_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the parent AgentTask that spawned this task. Absent for the root master task."
+    },
+    "run_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the AgentRunLog record this task belongs to. Links all tasks within a single hourly execution cycle."
+    },
+    "sandbox_id": {
+      "type": "string",
+      "description": "Identifier of the isolated sandbox environment in which this agent operates (e.g. a container ID or VM name). Agents must not share sandbox IDs to preserve isolation."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "running", "completed", "failed", "cancelled"],
+      "description": "Current lifecycle state of the task."
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Execution priority within the run (1 = lowest, 10 = highest). The master agent may set priorities to enforce ordering of subagent execution."
+    },
+    "input": {
+      "type": "object",
+      "description": "Agent-type-specific input parameters for this task. Schema varies by agent_type.",
+      "properties": {
+        "bible_book_range": {
+          "type": "object",
+          "description": "Applicable to 'scripture_search' agents. Defines the portion of the Bible to scan in this task.",
+          "additionalProperties": false,
+          "properties": {
+            "from_book": {
+              "type": "string",
+              "description": "First book to include (e.g. 'Genesis').",
+              "examples": ["Genesis"]
+            },
+            "to_book": {
+              "type": "string",
+              "description": "Last book to include (e.g. 'Revelation').",
+              "examples": ["Revelation"]
+            }
+          }
+        },
+        "financial_keywords": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "List of financial theme keywords to match during scripture search (e.g. 'debt', 'money', 'wealth', 'tithe', 'stewardship', 'treasure', 'usury', 'mammon')."
+        },
+        "scripture_record_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "UUIDs of ScriptureRecord documents to validate. Used by 'language_validator' and 'theological_validator' agents."
+        },
+        "target_languages": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["hebrew", "greek", "aramaic"]
+          },
+          "uniqueItems": true,
+          "description": "Original-language corpora to consult during cross-language validation. Used by 'language_validator' agents."
+        },
+        "seed_batch_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the ScriptureSeedBatch to push to the dApp. Used by 'dapp_seeder' agents."
+        },
+        "translation": {
+          "type": "string",
+          "description": "Bible translation abbreviation to search (e.g. 'KJV').",
+          "examples": ["KJV"]
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "description": "Agent-type-specific results produced by this task once completed.",
+      "properties": {
+        "scripture_record_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "UUIDs of ScriptureRecord documents discovered or processed by this task."
+        },
+        "validation_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "UUIDs of CrossLanguageValidation or TheologicalValidation records produced by this task."
+        },
+        "seed_batch_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the ScriptureSeedBatch record created by a 'dapp_seeder' task."
+        },
+        "records_processed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of scripture records processed by this task."
+        },
+        "records_accepted": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of records that passed all validation checks."
+        },
+        "records_rejected": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of records rejected during this task's processing."
+        }
+      }
+    },
+    "error": {
+      "type": "object",
+      "description": "Error details if the task reached a 'failed' status.",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Machine-readable error code (e.g. 'NETWORK_TIMEOUT', 'VALIDATION_ERROR')."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable description of what went wrong."
+        },
+        "retryable": {
+          "type": "boolean",
+          "description": "Whether the master agent should retry this task in the next cycle.",
+          "default": false
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when this task was created by the master agent."
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when the agent began executing the task."
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when the task reached a terminal state (completed, failed, or cancelled)."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when this record was last updated."
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true,
+      "description": "Optional free-form tags for routing or observability (e.g. 'old-testament', 'new-testament', 'hebrew')."
+    }
+  },
+  "examples": [
+    {
+      "task_id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "schema_version": "1.0.0",
+      "agent_type": "scripture_search",
+      "agent_id": "scripture-search-agent-01",
+      "parent_task_id": "a1b2c3d4-0000-0000-0000-000000000001",
+      "run_id": "run-2024-01-01-0000",
+      "sandbox_id": "sandbox-scripture-search-01",
+      "status": "completed",
+      "priority": 8,
+      "input": {
+        "bible_book_range": { "from_book": "Genesis", "to_book": "Malachi" },
+        "financial_keywords": ["debt", "money", "wealth", "tithe", "stewardship", "treasure", "mammon", "usury", "silver", "gold"],
+        "translation": "KJV"
+      },
+      "output": {
+        "scripture_record_ids": ["b2c3d4e5-0001-0001-0001-000000000001"],
+        "records_processed": 23145,
+        "records_accepted": 2084,
+        "records_rejected": 21061
+      },
+      "created_at": "2024-01-01T00:00:01Z",
+      "started_at": "2024-01-01T00:00:02Z",
+      "completed_at": "2024-01-01T00:04:30Z",
+      "updated_at": "2024-01-01T00:04:30Z",
+      "tags": ["old-testament", "kjv"]
+    }
+  ]
+}

@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/cross_language_validation.schema.json",
+  "title": "CrossLanguageValidation",
+  "description": "Records the result of cross-referencing a KJV ScriptureRecord against the corresponding Original Hebrew, Greek, and/or Aramaic source texts. Produced by 'language_validator' subagents to confirm that the English translation faithfully preserves the original financial meaning and context.",
+  "type": "object",
+  "required": ["validation_id", "schema_version", "scripture_record_id", "language_results", "overall_status", "validated_at"],
+  "additionalProperties": false,
+  "properties": {
+    "validation_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique identifier for this cross-language validation record (UUID v4)."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the CrossLanguageValidation schema (e.g. '1.0.0').",
+      "examples": ["1.0.0"]
+    },
+    "scripture_record_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the ScriptureRecord (KJV English) that this validation pertains to."
+    },
+    "english_reference": {
+      "type": "object",
+      "description": "Human-readable Bible reference for the validated passage.",
+      "required": ["book", "chapter", "verses"],
+      "additionalProperties": false,
+      "properties": {
+        "book": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Canonical book name (e.g. 'Proverbs')."
+        },
+        "chapter": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Chapter number."
+        },
+        "verses": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1 },
+            {
+              "type": "array",
+              "items": { "type": "integer", "minimum": 1 },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            {
+              "type": "object",
+              "required": ["from", "to"],
+              "additionalProperties": false,
+              "properties": {
+                "from": { "type": "integer", "minimum": 1 },
+                "to": { "type": "integer", "minimum": 1 }
+              }
+            }
+          ],
+          "description": "Verse or verse range."
+        }
+      }
+    },
+    "language_results": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Validation results for each original language consulted.",
+      "items": {
+        "type": "object",
+        "required": ["language", "financial_theme_confirmed", "context_preserved", "alignment_status"],
+        "additionalProperties": false,
+        "properties": {
+          "language": {
+            "type": "string",
+            "enum": ["hebrew", "greek", "aramaic"],
+            "description": "The original language corpus consulted."
+          },
+          "source_text": {
+            "type": "string",
+            "description": "The original-language text of the passage (rendered in its native script, e.g. Hebrew Unicode)."
+          },
+          "transliteration": {
+            "type": "string",
+            "description": "Optional romanised transliteration of the original-language text."
+          },
+          "key_terms": {
+            "type": "array",
+            "description": "Financially significant terms found in this language's text.",
+            "items": {
+              "type": "object",
+              "required": ["original_term", "strongs_number", "english_gloss"],
+              "additionalProperties": false,
+              "properties": {
+                "original_term": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The term as it appears in the original-language text."
+                },
+                "strongs_number": {
+                  "type": "string",
+                  "pattern": "^[HG]\\d+$",
+                  "description": "Strong's Concordance reference number (e.g. 'H3701' for silver/money in Hebrew, 'G5536' for money/possessions in Greek).",
+                  "examples": ["H3701", "G5536", "H1242"]
+                },
+                "english_gloss": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Standard English gloss for this term (e.g. 'silver', 'money', 'debt')."
+                },
+                "financial_relevance": {
+                  "type": "string",
+                  "enum": ["primary", "secondary", "contextual"],
+                  "description": "How directly this term relates to the financial theme: 'primary' terms explicitly denote financial concepts; 'secondary' terms have strong financial connotations; 'contextual' terms acquire financial meaning from surrounding text."
+                }
+              }
+            }
+          },
+          "alignment_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Numeric measure of how closely the KJV translation aligns with the original-language meaning (0.0 = no alignment, 1.0 = perfect alignment)."
+          },
+          "context_preserved": {
+            "type": "boolean",
+            "description": "Whether the original linguistic and cultural context is adequately preserved in the English translation."
+          },
+          "financial_theme_confirmed": {
+            "type": "boolean",
+            "description": "Whether the financial theme is confirmed to be present in the original-language text (not an artifact of the English translation)."
+          },
+          "alignment_status": {
+            "type": "string",
+            "enum": ["aligned", "partially_aligned", "misaligned", "inconclusive"],
+            "description": "Qualitative assessment of the translation's fidelity to the original."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional commentary from the language_validator agent explaining nuances, translation choices, or caveats."
+          },
+          "source_corpus": {
+            "type": "string",
+            "description": "Reference to the specific text corpus used (e.g. 'Westminster Leningrad Codex', 'NA28', 'Peshitta').",
+            "examples": ["Westminster Leningrad Codex", "Nestle-Aland 28th Edition", "Peshitta (Syriac NT)"]
+          }
+        }
+      }
+    },
+    "overall_status": {
+      "type": "string",
+      "enum": ["validated", "partially_validated", "failed", "pending"],
+      "description": "Aggregate validation outcome across all languages. 'validated' requires all consulted languages to confirm the financial theme; 'partially_validated' means at least one language confirmed it; 'failed' means none confirmed it."
+    },
+    "validated_by_agent": {
+      "type": "string",
+      "description": "Identifier of the 'language_validator' agent instance that produced this record."
+    },
+    "task_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the AgentTask that generated this validation record."
+    },
+    "validated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when this validation was completed."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when this record was created."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when this record was last updated."
+    }
+  },
+  "examples": [
+    {
+      "validation_id": "cv-2024-01-01-0001-uuid",
+      "schema_version": "1.0.0",
+      "scripture_record_id": "b2c3d4e5-0001-0001-0001-000000000001",
+      "english_reference": {
+        "book": "Proverbs",
+        "chapter": 22,
+        "verses": 7
+      },
+      "language_results": [
+        {
+          "language": "hebrew",
+          "source_text": "עָשִׁ֣יר בְּרָשִׁ֣ים יִמְשׁ֑וֹל וְעֶ֥בֶד לֹוֶ֗֝ה לְאִ֣ישׁ מַלְוֶֽה׃",
+          "transliteration": "ashir b'rashim yimshol, v'eved loveh l'ish malveh",
+          "key_terms": [
+            {
+              "original_term": "לֹוֶה",
+              "strongs_number": "H3867",
+              "english_gloss": "borrower",
+              "financial_relevance": "primary"
+            },
+            {
+              "original_term": "מַלְוֶה",
+              "strongs_number": "H4442",
+              "english_gloss": "lender",
+              "financial_relevance": "primary"
+            }
+          ],
+          "alignment_score": 0.97,
+          "context_preserved": true,
+          "financial_theme_confirmed": true,
+          "alignment_status": "aligned",
+          "source_corpus": "Westminster Leningrad Codex",
+          "notes": "The Hebrew terms for borrower (loveh) and lender (malveh) are unambiguous financial terms. The KJV rendering 'borrower is servant to the lender' faithfully preserves both meaning and tone."
+        }
+      ],
+      "overall_status": "validated",
+      "validated_by_agent": "lang-validator-heb-01",
+      "task_id": "a1b2c3d4-0002-0002-0002-000000000001",
+      "validated_at": "2024-01-01T00:15:00Z",
+      "created_at": "2024-01-01T00:15:00Z",
+      "updated_at": "2024-01-01T00:15:00Z"
+    }
+  ]
+}
