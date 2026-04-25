@@ -1,0 +1,43 @@
+name: Validate Schema v3
+
+on:
+  push:
+    branches:
+      - "copilot/**"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install ajv-cli and ajv-formats
+        run: npm install --save-dev ajv-cli ajv-formats
+
+      - name: Validate schema against JSON Schema Draft 2020-12 meta-schema
+        run: |
+          npx ajv validate \
+            --spec=draft2020 \
+            -c ajv-formats \
+            --strict=false \
+            -s node_modules/ajv/dist/refs/json-schema-2020-12/schema.json \
+            -d schemas/scripture_record.schema.json
+
+      - name: Validate fixture against schema
+        run: |
+          npx ajv validate \
+            --spec=draft2020 \
+            -c ajv-formats \
+            --strict=false \
+            -s schemas/scripture_record.schema.json \
+            -d tests/fixtures/scripture_record_v3_example.json

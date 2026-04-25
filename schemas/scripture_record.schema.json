@@ -1,10 +1,19 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.biblefi.io/v2.1/scripture_record.schema.json",
+  "$id": "https://schemas.biblefi.io/v3/scripture_record.schema.json",
   "title": "ScriptureRecord",
-  "description": "v2.1.0 — Canonical reference to a Bible passage with cryptographic content hashing, AI metadata, hermeneutics, cross-references, multi-chain attestations, full provenance tracking, canonical graph, zero-knowledge proofs, liturgical schedule, temporal integrity, interoperability links, oral tradition, and computational linguistics.",
+  "description": "v3.0.0 — Canonical reference to a Bible passage with cryptographic content hashing, AI metadata, hermeneutics, cross-references, multi-chain attestations, zero-knowledge proofs, canonical graph traversal, semantic diff, liturgical context, multi-sig governance, recitation metrics, interoperability identifiers, covenant mapping, dispute resolution, and vector embedding index.",
   "type": "object",
-  "required": ["record_id", "schema_version", "book", "chapter", "verses", "translation", "text", "content_hash"],
+  "required": [
+    "record_id",
+    "schema_version",
+    "book",
+    "chapter",
+    "verses",
+    "translation",
+    "text",
+    "content_hash"
+  ],
   "additionalProperties": false,
   "properties": {
     "record_id": {
@@ -15,14 +24,23 @@
     "schema_version": {
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+$",
-      "description": "Semantic version of the ScriptureRecord schema (e.g. '2.1.0').",
-      "examples": ["2.0.0", "2.1.0"]
+      "description": "Semantic version of the ScriptureRecord schema.",
+      "examples": [
+        "2.0.0",
+        "2.1.0",
+        "3.0.0"
+      ]
     },
     "book": {
       "type": "string",
       "minLength": 1,
       "description": "Canonical book name.",
-      "examples": ["Genesis", "Psalms", "John", "Revelation"]
+      "examples": [
+        "Genesis",
+        "Psalms",
+        "John",
+        "Revelation"
+      ]
     },
     "chapter": {
       "type": "integer",
@@ -30,41 +48,84 @@
     },
     "verses": {
       "oneOf": [
-        { "type": "integer", "minimum": 1 },
+        {
+          "type": "integer",
+          "minimum": 1
+        },
         {
           "type": "array",
-          "items": { "type": "integer", "minimum": 1 },
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
           "minItems": 1,
           "uniqueItems": true
         },
         {
           "type": "object",
-          "required": ["from", "to"],
+          "required": [
+            "from",
+            "to"
+          ],
           "additionalProperties": false,
           "properties": {
-            "from": { "type": "integer", "minimum": 1 },
-            "to": { "type": "integer", "minimum": 1 }
+            "from": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "to": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         }
       ]
     },
+    "canonical_verse_count": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of canonical verses this record covers. Must be consistent with the verses field."
+    },
     "translation": {
       "type": "object",
-      "required": ["abbreviation", "full_name", "language"],
+      "required": [
+        "abbreviation",
+        "full_name",
+        "language"
+      ],
       "additionalProperties": false,
       "properties": {
-        "abbreviation": { "type": "string", "minLength": 1 },
-        "full_name": { "type": "string", "minLength": 1 },
+        "abbreviation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "full_name": {
+          "type": "string",
+          "minLength": 1
+        },
         "language": {
           "type": "string",
           "pattern": "^[a-z]{2,3}(-[A-Z]{2,3})?$",
-          "description": "BCP-47 language tag (e.g. 'en', 'en-US', 'heb')."
+          "description": "BCP-47 language tag."
         },
-        "year_published": { "type": "integer", "minimum": 1000 },
-        "dialect": { "type": "string" },
+        "year_published": {
+          "type": "integer",
+          "minimum": 1000
+        },
+        "dialect": {
+          "type": "string"
+        },
         "manuscript_tradition": {
           "type": "string",
-          "enum": ["masoretic_text", "septuagint", "textus_receptus", "nestle_aland", "dead_sea_scrolls", "vulgate", "other"]
+          "enum": [
+            "masoretic_text",
+            "septuagint",
+            "textus_receptus",
+            "nestle_aland",
+            "dead_sea_scrolls",
+            "vulgate",
+            "other"
+          ]
         }
       }
     },
@@ -76,7 +137,18 @@
     "content_hash": {
       "type": "string",
       "pattern": "^0x[0-9a-fA-F]{64}$",
-      "description": "Keccak-256 hash of the NFC-normalized, trimmed UTF-8 text. Compute as: JS: `keccak256(toBytes(text.normalize('NFC').trim()))` | Python: `'0x' + keccak(unicodedata.normalize('NFC', text.strip()).encode()).hex()`."
+      "description": "Keccak-256 hash of the NFC-normalized, trimmed UTF-8 text."
+    },
+    "hash_algorithm": {
+      "type": "string",
+      "enum": [
+        "keccak256",
+        "sha3_256",
+        "blake3",
+        "poseidon_bn254"
+      ],
+      "default": "keccak256",
+      "description": "Hash function used to compute content_hash. Default and recommended is keccak256."
     },
     "created_at": {
       "type": "string",
@@ -88,56 +160,102 @@
     },
     "topics": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 },
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
       "uniqueItems": true
     },
     "tags": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 },
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
       "uniqueItems": true
     },
     "provenance": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "source_organization": { "type": "string" },
-        "source_url": { "type": "string", "format": "uri" },
+        "source_organization": {
+          "type": "string"
+        },
+        "source_url": {
+          "type": "string",
+          "format": "uri"
+        },
         "license": {
           "type": "string",
-          "enum": ["public_domain", "CC0", "CC_BY", "CC_BY_SA", "proprietary", "fair_use"]
+          "enum": [
+            "public_domain",
+            "CC0",
+            "CC_BY",
+            "CC_BY_SA",
+            "proprietary",
+            "fair_use"
+          ]
         },
-        "copyright_year": { "type": "integer", "minimum": 1000 },
-        "attribution_required": { "type": "boolean" },
-        "digitization_source": { "type": "string" }
+        "copyright_year": {
+          "type": "integer",
+          "minimum": 1000
+        },
+        "attribution_required": {
+          "type": "boolean"
+        },
+        "digitization_source": {
+          "type": "string"
+        }
       }
     },
     "ai_metadata": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "embedding_model": { "type": "string" },
-        "embedding_version": { "type": "string" },
-        "embedding_dimensions": { "type": "integer", "minimum": 1 },
+        "embedding_model": {
+          "type": "string"
+        },
+        "embedding_version": {
+          "type": "string"
+        },
+        "embedding_dimensions": {
+          "type": "integer",
+          "minimum": 1
+        },
         "semantic_clusters": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "uniqueItems": true
         },
         "sentiment_score": {
           "type": "number",
           "minimum": -1.0,
-          "maximum": 1.0,
-          "description": "Valence score from -1.0 (lament) to 1.0 (praise)."
+          "maximum": 1.0
         },
         "reading_level": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "flesch_kincaid_grade": { "type": "number", "minimum": 0 },
-            "flesch_reading_ease": { "type": "number", "minimum": 0, "maximum": 100 },
+            "flesch_kincaid_grade": {
+              "type": "number",
+              "minimum": 0
+            },
+            "flesch_reading_ease": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
             "grade_label": {
               "type": "string",
-              "enum": ["elementary", "middle_school", "high_school", "college", "graduate"]
+              "enum": [
+                "elementary",
+                "middle_school",
+                "high_school",
+                "college",
+                "graduate"
+              ]
             }
           }
         },
@@ -145,19 +263,41 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["theme", "confidence"],
+            "required": [
+              "theme",
+              "confidence"
+            ],
             "additionalProperties": false,
             "properties": {
               "theme": {
                 "type": "string",
                 "enum": [
-                  "soteriology", "eschatology", "ecclesiology", "pneumatology", "christology",
-                  "theodicy", "anthropology", "hamartiology", "cosmology", "ethics",
-                  "worship", "stewardship", "missions", "covenant", "kingdom",
-                  "wisdom", "law", "prophecy", "apocalyptic"
+                  "soteriology",
+                  "eschatology",
+                  "ecclesiology",
+                  "pneumatology",
+                  "christology",
+                  "theodicy",
+                  "anthropology",
+                  "hamartiology",
+                  "cosmology",
+                  "ethics",
+                  "worship",
+                  "stewardship",
+                  "missions",
+                  "covenant",
+                  "kingdom",
+                  "wisdom",
+                  "law",
+                  "prophecy",
+                  "apocalyptic"
                 ]
               },
-              "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+              "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
             }
           }
         },
@@ -165,15 +305,30 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["name", "type"],
+            "required": [
+              "name",
+              "type"
+            ],
             "additionalProperties": false,
             "properties": {
-              "name": { "type": "string" },
+              "name": {
+                "type": "string"
+              },
               "type": {
                 "type": "string",
-                "enum": ["person", "place", "nation", "deity", "artifact", "event", "time_period"]
+                "enum": [
+                  "person",
+                  "place",
+                  "nation",
+                  "deity",
+                  "artifact",
+                  "event",
+                  "time_period"
+                ]
               },
-              "biblical_id": { "type": "string" }
+              "biblical_id": {
+                "type": "string"
+              }
             }
           }
         }
@@ -183,46 +338,91 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["book", "chapter", "verses", "relationship"],
+        "required": [
+          "book",
+          "chapter",
+          "verses",
+          "relationship"
+        ],
         "additionalProperties": false,
         "properties": {
-          "book": { "type": "string", "minLength": 1 },
-          "chapter": { "type": "integer", "minimum": 1 },
+          "book": {
+            "type": "string",
+            "minLength": 1
+          },
+          "chapter": {
+            "type": "integer",
+            "minimum": 1
+          },
           "verses": {
             "oneOf": [
-              { "type": "integer", "minimum": 1 },
+              {
+                "type": "integer",
+                "minimum": 1
+              },
               {
                 "type": "array",
-                "items": { "type": "integer", "minimum": 1 },
+                "items": {
+                  "type": "integer",
+                  "minimum": 1
+                },
                 "minItems": 1,
                 "uniqueItems": true
               },
               {
                 "type": "object",
-                "required": ["from", "to"],
+                "required": [
+                  "from",
+                  "to"
+                ],
                 "additionalProperties": false,
                 "properties": {
-                  "from": { "type": "integer", "minimum": 1 },
-                  "to": { "type": "integer", "minimum": 1 }
+                  "from": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "to": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
                 }
               }
             ]
           },
           "relationship": {
             "type": "string",
-            "enum": ["parallel", "fulfillment", "quotation", "allusion", "type_antitype", "contrast", "background", "expansion"]
+            "enum": [
+              "parallel",
+              "fulfillment",
+              "quotation",
+              "allusion",
+              "type_antitype",
+              "contrast",
+              "background",
+              "expansion"
+            ]
           },
           "strength": {
             "type": "string",
-            "enum": ["explicit", "probable", "possible"],
+            "enum": [
+              "explicit",
+              "probable",
+              "possible"
+            ],
             "default": "possible"
           },
           "direction": {
             "type": "string",
-            "enum": ["forward", "backward", "bidirectional"],
+            "enum": [
+              "forward",
+              "backward",
+              "bidirectional"
+            ],
             "default": "bidirectional"
           },
-          "notes": { "type": "string" }
+          "notes": {
+            "type": "string"
+          }
         }
       }
     },
@@ -230,52 +430,95 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["abbreviation", "language", "text"],
+        "required": [
+          "abbreviation",
+          "language",
+          "text"
+        ],
         "additionalProperties": false,
         "properties": {
-          "abbreviation": { "type": "string" },
-          "language": { "type": "string" },
-          "text": { "type": "string" },
+          "abbreviation": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
           "content_hash": {
             "type": "string",
             "pattern": "^0x[0-9a-fA-F]{64}$"
           },
-          "year_published": { "type": "integer", "minimum": 1000 },
-          "semantic_similarity_to_primary": { "type": "number", "minimum": 0, "maximum": 1 },
-          "notable_differences": { "type": "string" }
+          "year_published": {
+            "type": "integer",
+            "minimum": 1000
+          },
+          "semantic_similarity_to_primary": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "notable_differences": {
+            "type": "string"
+          }
         }
       }
     },
     "attestations": {
       "type": "array",
-      "description": "On-chain attestation records. Replaces the singular v1 `attestation` field.",
+      "description": "On-chain attestation records.",
       "items": {
         "type": "object",
-        "required": ["chain_id", "contract_address", "attestation_type"],
+        "required": [
+          "chain_id",
+          "contract_address",
+          "attestation_type"
+        ],
         "additionalProperties": false,
         "properties": {
-          "chain_id": { "type": "integer", "minimum": 1 },
+          "chain_id": {
+            "type": "integer",
+            "minimum": 1
+          },
           "contract_address": {
             "type": "string",
             "pattern": "^0x[0-9a-fA-F]{40}$"
           },
-          "token_id": { "type": "string" },
+          "token_id": {
+            "type": "string"
+          },
           "tx_hash": {
             "type": "string",
             "pattern": "^0x[0-9a-fA-F]{64}$"
           },
           "attestation_type": {
             "type": "string",
-            "enum": ["nft_mint", "eas_attestation", "hypercert", "poap", "sbt", "merkle_leaf", "custom"]
+            "enum": [
+              "nft_mint",
+              "eas_attestation",
+              "hypercert",
+              "poap",
+              "sbt",
+              "merkle_leaf",
+              "custom"
+            ]
           },
-          "block_number": { "type": "integer", "minimum": 0 },
+          "block_number": {
+            "type": "integer",
+            "minimum": 0
+          },
           "ipfs_cid": {
             "type": "string",
-            "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[A-Za-z2-7]{58})$",
-            "description": "IPFS CID (CIDv0 starting with 'Qm' or CIDv1 starting with 'b')."
+            "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[A-Za-z2-7]{58})$"
           },
-          "attested_at": { "type": "string", "format": "date-time" },
-          "attested_by": { "type": "string" },
+          "attested_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "attested_by": {
+            "type": "string"
+          },
           "merkle_proof": {
             "type": "object",
             "additionalProperties": false,
@@ -291,8 +534,14 @@
                   "pattern": "^0x[0-9a-fA-F]{64}$"
                 }
               },
-              "leaf_index": { "type": "integer", "minimum": 0 },
-              "total_leaves": { "type": "integer", "minimum": 1 }
+              "leaf_index": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "total_leaves": {
+                "type": "integer",
+                "minimum": 1
+              }
             }
           }
         }
@@ -304,43 +553,116 @@
       "properties": {
         "literary_genre": {
           "type": "string",
-          "enum": ["narrative", "poetry", "prophecy", "epistle", "apocalyptic", "wisdom", "law", "gospel", "genealogy", "hymn", "lament", "oracle"]
+          "enum": [
+            "narrative",
+            "poetry",
+            "prophecy",
+            "epistle",
+            "apocalyptic",
+            "wisdom",
+            "law",
+            "gospel",
+            "genealogy",
+            "hymn",
+            "lament",
+            "oracle"
+          ]
         },
         "speech_act": {
           "type": "string",
-          "enum": ["promise", "command", "warning", "blessing", "curse", "prayer", "doxology", "question", "lament", "declaration", "invitation", "commissioning"]
+          "enum": [
+            "promise",
+            "command",
+            "warning",
+            "blessing",
+            "curse",
+            "prayer",
+            "doxology",
+            "question",
+            "lament",
+            "declaration",
+            "invitation",
+            "commissioning"
+          ]
         },
         "covenant_context": {
           "type": "string",
-          "enum": ["adamic", "noahic", "abrahamic", "mosaic", "davidic", "new_covenant", "pre-fall", "eschatological"]
+          "enum": [
+            "adamic",
+            "noahic",
+            "abrahamic",
+            "mosaic",
+            "davidic",
+            "new_covenant",
+            "pre-fall",
+            "eschatological"
+          ]
         },
         "canonical_position": {
           "type": "string",
-          "enum": ["ot_law", "ot_history", "ot_wisdom", "ot_prophecy", "nt_gospel", "nt_acts", "nt_epistle", "nt_apocalyptic"]
+          "enum": [
+            "ot_law",
+            "ot_history",
+            "ot_wisdom",
+            "ot_prophecy",
+            "nt_gospel",
+            "nt_acts",
+            "nt_epistle",
+            "nt_apocalyptic"
+          ]
         },
-        "christological_significance": { "type": "string" },
+        "christological_significance": {
+          "type": "string"
+        },
         "typology": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "is_type": { "type": "boolean", "default": false },
-            "is_antitype": { "type": "boolean", "default": false },
-            "type_description": { "type": "string" }
+            "is_type": {
+              "type": "boolean",
+              "default": false
+            },
+            "is_antitype": {
+              "type": "boolean",
+              "default": false
+            },
+            "type_description": {
+              "type": "string"
+            }
           }
         },
         "interpretive_traditions": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["tradition", "interpretation"],
+            "required": [
+              "tradition",
+              "interpretation"
+            ],
             "additionalProperties": false,
             "properties": {
               "tradition": {
                 "type": "string",
-                "enum": ["catholic", "reformed", "lutheran", "arminian", "orthodox", "baptist", "pentecostal", "anabaptist", "dispensational", "covenant_theology"]
+                "enum": [
+                  "catholic",
+                  "reformed",
+                  "lutheran",
+                  "arminian",
+                  "orthodox",
+                  "baptist",
+                  "pentecostal",
+                  "anabaptist",
+                  "dispensational",
+                  "covenant_theology"
+                ]
               },
-              "interpretation": { "type": "string", "minLength": 1 },
-              "source": { "type": "string" }
+              "interpretation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source": {
+                "type": "string"
+              }
             }
           }
         },
@@ -352,15 +674,23 @@
               "type": "array",
               "items": {
                 "type": "object",
-                "required": ["word", "strongs_id", "gloss"],
+                "required": [
+                  "word",
+                  "strongs_id",
+                  "gloss"
+                ],
                 "additionalProperties": false,
                 "properties": {
-                  "word": { "type": "string" },
+                  "word": {
+                    "type": "string"
+                  },
                   "strongs_id": {
                     "type": "string",
                     "pattern": "^H\\d+$"
                   },
-                  "gloss": { "type": "string" }
+                  "gloss": {
+                    "type": "string"
+                  }
                 }
               }
             },
@@ -368,15 +698,23 @@
               "type": "array",
               "items": {
                 "type": "object",
-                "required": ["word", "strongs_id", "gloss"],
+                "required": [
+                  "word",
+                  "strongs_id",
+                  "gloss"
+                ],
                 "additionalProperties": false,
                 "properties": {
-                  "word": { "type": "string" },
+                  "word": {
+                    "type": "string"
+                  },
                   "strongs_id": {
                     "type": "string",
                     "pattern": "^G\\d+$"
                   },
-                  "gloss": { "type": "string" }
+                  "gloss": {
+                    "type": "string"
+                  }
                 }
               }
             },
@@ -384,12 +722,22 @@
               "type": "array",
               "items": {
                 "type": "object",
-                "required": ["word", "strongs_id", "gloss"],
+                "required": [
+                  "word",
+                  "strongs_id",
+                  "gloss"
+                ],
                 "additionalProperties": false,
                 "properties": {
-                  "word": { "type": "string" },
-                  "strongs_id": { "type": "string" },
-                  "gloss": { "type": "string" }
+                  "word": {
+                    "type": "string"
+                  },
+                  "strongs_id": {
+                    "type": "string"
+                  },
+                  "gloss": {
+                    "type": "string"
+                  }
                 }
               }
             }
@@ -399,17 +747,41 @@
     },
     "revision_history": {
       "type": "array",
+      "description": "Immutable append-only log of every change to this record.",
       "items": {
         "type": "object",
-        "required": ["version", "changed_at", "content_hash_before", "content_hash_after", "change_type"],
+        "required": [
+          "revision_id",
+          "revised_at",
+          "revised_by",
+          "change_type"
+        ],
         "additionalProperties": false,
         "properties": {
-          "version": {
+          "revision_id": {
             "type": "string",
-            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+            "format": "uuid"
           },
-          "changed_at": { "type": "string", "format": "date-time" },
-          "changed_by": { "type": "string" },
+          "revised_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revised_by": {
+            "type": "string",
+            "description": "DID or EVM address of the revising entity."
+          },
+          "change_type": {
+            "type": "string",
+            "enum": [
+              "content_edit",
+              "metadata_update",
+              "translation_correction",
+              "attestation_added",
+              "schema_migration",
+              "ai_reprocess",
+              "governance_ratification"
+            ]
+          },
           "content_hash_before": {
             "type": "string",
             "pattern": "^0x[0-9a-fA-F]{64}$"
@@ -418,15 +790,886 @@
             "type": "string",
             "pattern": "^0x[0-9a-fA-F]{64}$"
           },
-          "change_type": {
+          "diff_summary": {
+            "type": "string"
+          },
+          "ratification_ref": {
+            "type": "string",
+            "description": "Reference to multi_sig_governance.proposal_id if applicable."
+          }
+        }
+      }
+    },
+    "zero_knowledge_proof": {
+      "type": "object",
+      "description": "Scripture Commitment Scheme — ZK-friendly structure for proving knowledge of a passage without revealing the text.",
+      "additionalProperties": false,
+      "properties": {
+        "protocol": {
+          "type": "string",
+          "enum": [
+            "groth16",
+            "plonk",
+            "stark",
+            "bulletproofs",
+            "halo2",
+            "nova_folding"
+          ]
+        },
+        "circuit_id": {
+          "type": "string",
+          "description": "Identifier of the specific ZK circuit."
+        },
+        "proof_bytes": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]+$",
+          "description": "Hex-encoded proof blob."
+        },
+        "public_inputs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Public inputs; each a hex uint256."
+        },
+        "verification_key_uri": {
+          "type": "string",
+          "format": "uri"
+        },
+        "commitment": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$",
+          "description": "Pedersen or Poseidon commitment to content_hash."
+        },
+        "nullifier": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$",
+          "description": "Unique per (record_id, prover_address) pair — prevents double-claiming."
+        },
+        "prover_address": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$",
+          "description": "EVM address of proof generator."
+        },
+        "proved_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "canonical_graph": {
+      "type": "object",
+      "description": "BibleFi Canonical Traversal Index — directed acyclic graph of intertextual dependencies enabling topological traversal across the canon.",
+      "additionalProperties": false,
+      "properties": {
+        "node_id": {
+          "type": "string",
+          "description": "UUID identifying this node in the canonical graph."
+        },
+        "canonical_order": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Position in the BibleFi canonical sequence (weights: NT fulfillment density × OT prophetic occurrence × cross-reference edge count)."
+        },
+        "in_edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "source_record_id",
+              "edge_type"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "source_record_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "edge_type": {
+                "type": "string",
+                "enum": [
+                  "fulfills",
+                  "quotes",
+                  "alludes_to",
+                  "parallels",
+                  "contrasts",
+                  "elaborates",
+                  "inaugurates",
+                  "closes"
+                ]
+              },
+              "weight": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Theological significance weight."
+              },
+              "provenance_confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          }
+        },
+        "out_edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "target_record_id",
+              "edge_type"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "target_record_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "edge_type": {
+                "type": "string",
+                "enum": [
+                  "fulfills",
+                  "quotes",
+                  "alludes_to",
+                  "parallels",
+                  "contrasts",
+                  "elaborates",
+                  "inaugurates",
+                  "closes"
+                ]
+              },
+              "weight": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "provenance_confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          }
+        },
+        "strongly_connected_component": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "SCC index from Tarjan's algorithm applied to the canon graph."
+        },
+        "betweenness_centrality": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Normalized betweenness — identifies hub passages."
+        },
+        "pagerank_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Theological PageRank — passage influence score."
+        },
+        "clustering_coefficient": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "semantic_diff": {
+      "type": "object",
+      "description": "Scripture Semantic Delta Algorithm — tracks meaning divergence between this record and previous revisions or translations using cosine similarity and Jensen-Shannon divergence.",
+      "additionalProperties": false,
+      "properties": {
+        "base_record_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The record this is diffed against."
+        },
+        "base_content_hash": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$"
+        },
+        "cosine_similarity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "jensen_shannon_divergence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "0 = identical distributions, 1 = maximally different."
+        },
+        "edit_distance_normalized": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Levenshtein distance normalized by max(len_a, len_b)."
+        },
+        "semantic_drift_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Custom weighted score: 0.5*JSD + 0.3*(1-cosine) + 0.2*edit_distance_normalized."
+        },
+        "changed_theological_themes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "theme",
+              "delta"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "theme": {
+                "type": "string",
+                "enum": [
+                  "soteriology",
+                  "eschatology",
+                  "ecclesiology",
+                  "pneumatology",
+                  "christology",
+                  "theodicy",
+                  "anthropology",
+                  "hamartiology",
+                  "cosmology",
+                  "ethics",
+                  "worship",
+                  "stewardship",
+                  "missions",
+                  "covenant",
+                  "kingdom",
+                  "wisdom",
+                  "law",
+                  "prophecy",
+                  "apocalyptic"
+                ]
+              },
+              "delta": {
+                "type": "number",
+                "minimum": -1,
+                "maximum": 1,
+                "description": "Positive = theme strengthened, negative = weakened."
+              }
+            }
+          }
+        },
+        "diff_model": {
+          "type": "string",
+          "description": "Embedding model used for comparison."
+        },
+        "diff_computed_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "liturgical_context": {
+      "type": "object",
+      "description": "Pericope-to-Lectionary Mapping — assigns passages to liturgical calendar positions using a denomination-aware algorithm.",
+      "additionalProperties": false,
+      "properties": {
+        "lectionary_system": {
+          "type": "string",
+          "enum": [
+            "roman_catholic_rclc3",
+            "revised_common_lectionary",
+            "lutheran_one_year",
+            "orthodox_byzantine",
+            "reformed_daily",
+            "methodist_daily",
+            "custom"
+          ]
+        },
+        "liturgical_season": {
+          "type": "string",
+          "enum": [
+            "advent",
+            "christmas",
+            "epiphany",
+            "lent",
+            "holy_week",
+            "easter",
+            "pentecost",
+            "ordinary_time",
+            "kingdom_tide",
+            "pre_lent",
+            "triodion",
+            "pascha"
+          ]
+        },
+        "liturgical_week": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 52
+        },
+        "liturgical_day": {
+          "type": "string",
+          "enum": [
+            "sunday",
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "feast_day",
+            "fast_day",
+            "vigil"
+          ]
+        },
+        "year_cycle": {
+          "type": "string",
+          "enum": [
+            "A",
+            "B",
+            "C",
+            "I",
+            "II"
+          ]
+        },
+        "pericope_id": {
+          "type": "string",
+          "description": "Standard pericope identifier, e.g. 'RCL-A-Advent-1-Gospel'."
+        },
+        "reading_role": {
+          "type": "string",
+          "enum": [
+            "old_testament",
+            "psalm",
+            "epistle",
+            "gospel",
+            "alternative_first",
+            "canticle",
+            "responsory"
+          ]
+        },
+        "appointed_for_year": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "collect_theme": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string",
+          "enum": [
+            "white",
+            "red",
+            "green",
+            "purple",
+            "blue",
+            "gold",
+            "black",
+            "rose"
+          ]
+        }
+      }
+    },
+    "multi_sig_governance": {
+      "type": "object",
+      "description": "Scripture Record Amendment Protocol (SRAP) — multi-signature governance model for proposing and ratifying changes to canonical scripture records on-chain.",
+      "additionalProperties": false,
+      "properties": {
+        "governance_contract": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$"
+        },
+        "proposal_id": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$"
+        },
+        "required_signers": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "current_signers": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "threshold_type": {
+          "type": "string",
+          "enum": [
+            "absolute",
+            "percentage",
+            "weighted_stake",
+            "quadratic"
+          ]
+        },
+        "threshold_value": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "signers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "address",
+              "signed_at",
+              "signature"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "address": {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{40}$"
+              },
+              "signed_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "signature": {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{130}$"
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "pastor",
+                  "elder",
+                  "deacon",
+                  "scholar",
+                  "validator",
+                  "dao_member",
+                  "observer"
+                ]
+              },
+              "stake_weight": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "ratified_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ratification_tx": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$"
+        },
+        "amendment_type": {
+          "type": "string",
+          "enum": [
+            "content_correction",
+            "metadata_update",
+            "translation_addition",
+            "deprecation",
+            "restoration",
+            "canonical_reclassification"
+          ]
+        },
+        "veto_window_ends": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "vetoed_by": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "EVM addresses that exercised veto."
+        }
+      }
+    },
+    "recitation_metrics": {
+      "type": "object",
+      "description": "Scripture Phonological Complexity Index (SPCI) — quantifies memorability and recitability based on phonological and structural properties.",
+      "additionalProperties": false,
+      "properties": {
+        "word_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "syllable_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "average_syllables_per_word": {
+          "type": "number",
+          "minimum": 0
+        },
+        "rhyme_density": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Fraction of line-ending words that rhyme with another."
+        },
+        "alliteration_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Fraction of consecutive word pairs sharing initial phoneme."
+        },
+        "parallelism_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Structural repetition score — high for Hebrew poetry."
+        },
+        "memorability_index": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Custom SPCI composite: 20*rhyme + 15*alliteration + 25*parallelism + 20*(1/avg_syllables_per_word normalized) + 20*(1 - normalized_word_count)."
+        },
+        "phoneme_inventory": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "description": "IPA phonemes present in the passage."
+        },
+        "stress_pattern": {
+          "type": "string",
+          "description": "E.g. 'iambic', 'trochaic', 'dactylic', 'irregular'."
+        },
+        "oral_tradition_classification": {
+          "type": "string",
+          "enum": [
+            "memory_verse",
+            "liturgical_refrain",
+            "narrative_prose",
+            "prophetic_oracle",
+            "wisdom_aphorism",
+            "doxology",
+            "lament",
+            "commissioning"
+          ]
+        }
+      }
+    },
+    "interoperability": {
+      "type": "object",
+      "description": "Cross-protocol linking identifiers to external theological and scholarly systems.",
+      "additionalProperties": false,
+      "properties": {
+        "osis_id": {
+          "type": "string",
+          "description": "OSIS reference, e.g. 'John.3.16'."
+        },
+        "usfm_marker": {
+          "type": "string",
+          "description": "USFM book code + ref, e.g. 'JHN 3:16'."
+        },
+        "sword_module": {
+          "type": "string"
+        },
+        "paratext_id": {
+          "type": "string"
+        },
+        "wikidata_qid": {
+          "type": "string",
+          "pattern": "^Q[0-9]+$"
+        },
+        "openscriptures_uri": {
+          "type": "string",
+          "format": "uri"
+        },
+        "bible_org_api_ref": {
+          "type": "string"
+        },
+        "logos_ref": {
+          "type": "string"
+        },
+        "accordance_ref": {
+          "type": "string"
+        },
+        "step_bible_ref": {
+          "type": "string"
+        },
+        "digital_bible_library_id": {
+          "type": "string"
+        },
+        "linked_data_uri": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "covenant_map": {
+      "type": "object",
+      "description": "Covenant Fulfillment Lattice — models this passage's position within the Redemptive-Historical covenant structure as a partially ordered set (poset).",
+      "additionalProperties": false,
+      "properties": {
+        "primary_covenant": {
+          "type": "string",
+          "enum": [
+            "adamic",
+            "noahic",
+            "abrahamic",
+            "mosaic",
+            "davidic",
+            "new_covenant"
+          ]
+        },
+        "fulfillment_stage": {
+          "type": "string",
+          "enum": [
+            "promise",
+            "type",
+            "shadow",
+            "partial_fulfillment",
+            "inauguration",
+            "consummation",
+            "eschatological_horizon"
+          ]
+        },
+        "poset_level": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Depth in the covenant fulfillment lattice — 0 = Adamic promise, max = final consummation."
+        },
+        "related_covenants": {
+          "type": "array",
+          "items": {
             "type": "string",
             "enum": [
-              "text_correction", "metadata_update", "translation_added", "attestation_added",
-              "ai_metadata_refresh", "hermeneutics_update", "cross_reference_added", "schema_migration"
+              "adamic",
+              "noahic",
+              "abrahamic",
+              "mosaic",
+              "davidic",
+              "new_covenant"
             ]
+          }
+        },
+        "covenant_keywords": {
+          "type": "array",
+          "items": {
+            "type": "string"
           },
-          "diff_summary": { "type": "string" },
-          "reviewed_by": { "type": "string" }
+          "uniqueItems": true
+        },
+        "redemptive_historical_arc": {
+          "type": "string",
+          "enum": [
+            "creation",
+            "fall",
+            "patriarchs",
+            "exodus",
+            "conquest",
+            "monarchy",
+            "exile",
+            "return",
+            "second_temple",
+            "incarnation",
+            "ministry",
+            "passion",
+            "resurrection",
+            "pentecost",
+            "church_age",
+            "parousia",
+            "new_creation"
+          ]
+        },
+        "inaugurated_eschatology_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "0 = purely future, 1 = purely realized."
+        },
+        "typological_density": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "dispute_resolution": {
+      "type": "object",
+      "description": "Tracks scholarly or community disputes about the passage's text, translation, or interpretation, with on-chain adjudication references.",
+      "additionalProperties": false,
+      "properties": {
+        "disputes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "dispute_id",
+              "dispute_type",
+              "status"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "dispute_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "dispute_type": {
+                "type": "string",
+                "enum": [
+                  "textual_variant",
+                  "translation_accuracy",
+                  "canonical_inclusion",
+                  "authorship",
+                  "dating",
+                  "interpretation",
+                  "attribution"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "under_review",
+                  "resolved",
+                  "escalated",
+                  "withdrawn"
+                ]
+              },
+              "filed_by": {
+                "type": "string"
+              },
+              "filed_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "resolution": {
+                "type": "string"
+              },
+              "resolved_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "resolution_tx": {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{64}$"
+              },
+              "evidence_cids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "dissenting_opinions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "embedding_index": {
+      "type": "object",
+      "description": "Stores multiple versioned vector embeddings for semantic search and clustering, with support for dimensionality reduction coordinates.",
+      "additionalProperties": false,
+      "properties": {
+        "vectors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "model",
+              "dimensions",
+              "vector_cid"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "model": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "dimensions": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "vector_cid": {
+                "type": "string"
+              },
+              "quantization": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "int8",
+                  "int4",
+                  "binary"
+                ],
+                "default": "none"
+              },
+              "computed_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        },
+        "umap_coordinates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "z": {
+              "type": "number"
+            },
+            "n_neighbors": {
+              "type": "integer",
+              "minimum": 2
+            },
+            "min_dist": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "metric": {
+              "type": "string",
+              "enum": [
+                "cosine",
+                "euclidean",
+                "manhattan",
+                "correlation"
+              ]
+            }
+          }
+        },
+        "nearest_neighbors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "record_id",
+              "similarity"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "record_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "similarity": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "distance_metric": {
+                "type": "string",
+                "enum": [
+                  "cosine",
+                  "euclidean",
+                  "dot_product"
+                ]
+              }
+            }
+          }
         }
       }
     },
