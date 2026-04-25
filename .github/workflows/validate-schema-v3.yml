@@ -24,14 +24,19 @@ jobs:
       - name: Install ajv-cli and ajv-formats
         run: npm install --save-dev ajv-cli ajv-formats
 
-      - name: Validate schema against JSON Schema Draft 2020-12 meta-schema
+      - name: Validate schemas (Draft 2020-12)
         run: |
           npx ajv validate \
             --spec=draft2020 \
             -c ajv-formats \
             --strict=false \
-            -s node_modules/ajv/dist/refs/json-schema-2020-12/schema.json \
             -d schemas/scripture_record.schema.json
+
+          npx ajv validate \
+            --spec=draft2020 \
+            -c ajv-formats \
+            --strict=false \
+            -d schemas/validation_algorithm.schema.json
 
       - name: Validate fixture against schema
         run: |

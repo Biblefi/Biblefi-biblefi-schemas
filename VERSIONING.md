@@ -6,6 +6,8 @@
 
 | Schema | Version | Status |
 |---|---|---|
+| `scripture_record` | `2.0.0` | Stable |
+| `scripture_record` | `2.1.0` | Stable |
 | `scripture_record` | `3.0.0` | Stable |
 | `agent_envelope` | `1.0.0` | Stable |
 | `church_record` | `1.0.0` | Stable |
@@ -34,4 +36,5 @@
 | Schema | Version | Retained Until | Replacement |
 |---|---|---|---|
 | `scripture_record` (v2) | `2.0.0` | 2029-03 | `scripture_record` v3.0.0 |
+| `scripture_record` (v2) | `2.1.0` | 2029-03 | `scripture_record` v3.0.0 |
 | `scripture_record` (v1) | `1.0.0` | 2028-03 | `scripture_record` v3.0.0 |
