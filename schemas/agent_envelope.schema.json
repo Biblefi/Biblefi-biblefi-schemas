@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.biblefi.io/agent_envelope.schema.json",
+  "$id": "https://schemas.biblefi.io/v2/agent_envelope.schema.json",
   "title": "AgentEnvelope",
-  "description": "Universal wrapper for all BibleFi agent messages and records. Every payload transmitted between agents or stored on-chain must be wrapped in this envelope. Supports the full agentic scripture-pipeline including task orchestration, run logging, seed batches, and multi-language and theological validation.",
+  "description": "v2.0.0 — Universal message wrapper for BibleFi agent communications. Includes routing, security context, Farcaster frame context, and Base chain transaction context. Supports the full agentic scripture-pipeline including task orchestration, run logging, seed batches, and multi-language and theological validation.",
   "type": "object",
   "required": ["envelope_id", "schema_version", "created_at", "payload_type", "payload"],
   "additionalProperties": false,
@@ -15,8 +15,8 @@
     "schema_version": {
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+$",
-      "description": "Semantic version of the AgentEnvelope schema used (e.g. '1.0.0').",
-      "examples": ["1.0.0"]
+      "description": "Semantic version of the AgentEnvelope schema used (e.g. '2.0.0').",
+      "examples": ["2.0.0"]
     },
     "created_at": {
       "type": "string",
@@ -37,6 +37,8 @@
         "security_finding",
         "wallet_record",
         "user_profile",
+        "tithe_transaction",
+        "farcaster_frame_event",
         "agent_task",
         "agent_run_log",
         "scripture_seed_batch",
@@ -44,11 +46,11 @@
         "theological_validation",
         "generic"
       ],
-      "description": "Discriminator indicating which schema governs the contents of the 'payload' field."
+      "description": "Discriminator indicating which schema governs the contents of the 'payload' field. Payload structure validation is the responsibility of the consumer using the appropriate per-type schema."
     },
     "payload": {
       "type": "object",
-      "description": "The actual data payload. Must conform to the schema identified by 'payload_type'."
+      "description": "The actual data payload. Must conform to the schema identified by 'payload_type'. Payload validation is out-of-band and performed using the per-type schema."
     },
     "sender": {
       "type": "object",
@@ -68,6 +70,11 @@
           "type": "string",
           "pattern": "^0x[0-9a-fA-F]{40}$",
           "description": "Optional EVM-compatible wallet address of the sender."
+        },
+        "fid": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Optional Farcaster ID of the sending user or agent."
         }
       }
     },
@@ -89,20 +96,67 @@
         "public_key": {
           "type": "string",
           "description": "Base64url-encoded public key corresponding to the signing key."
+        },
+        "signed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 UTC timestamp when the signature was created."
         }
       }
     },
     "tags": {
       "type": "array",
-      "items": {
-        "type": "string"
-      },
+      "items": { "type": "string" },
       "uniqueItems": true,
       "description": "Optional free-form tags for filtering, routing, or indexing."
     },
-    "correlation_id": {
-      "type": "string",
-      "description": "Optional identifier linking this envelope to a broader workflow or request chain."
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional message routing metadata for agent-to-agent communications.",
+      "properties": {
+        "destination_agent": { "type": "string", "description": "Target BibleFi agent ID per AGENT_TAXONOMY.md" },
+        "source_agent": { "type": "string" },
+        "priority": { "type": "string", "enum": ["low","normal","high","critical"], "default": "normal" },
+        "ttl_seconds": { "type": "integer", "minimum": 0 },
+        "retry_count": { "type": "integer", "minimum": 0, "default": 0 },
+        "correlation_id": { "type": "string", "format": "uuid", "description": "Groups related messages in a conversation/workflow" }
+      }
+    },
+    "security_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional security classification and trust metadata for the envelope.",
+      "properties": {
+        "classification": { "type": "string", "enum": ["public","internal","confidential","restricted"] },
+        "requires_verification": { "type": "boolean", "default": false },
+        "trust_level": { "type": "string", "enum": ["untrusted","low","medium","high","verified"], "description": "Trust level per BibleFi TRUST_BOUNDARIES.md. All agent communications are sandboxed per SANDBOXING_POLICY.md" },
+        "sandboxed": { "type": "boolean", "default": true, "description": "Whether this envelope originates from a sandboxed agent per SANDBOXING_POLICY.md in Biblefi/BibleFi" }
+      }
+    },
+    "farcaster_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Present when envelope originates from a Farcaster Frame interaction. BibleFi is a native Farcaster mini-app.",
+      "properties": {
+        "cast_hash": { "type": "string", "minLength": 1 },
+        "fid": { "type": "integer", "minimum": 1 },
+        "frame_action": { "type": "string" },
+        "channel_id": { "type": "string", "description": "Farcaster channel e.g. /biblefi /faith /defi" },
+        "frame_uri": { "type": "string", "format": "uri" }
+      }
+    },
+    "base_chain_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Present when envelope relates to a Base chain transaction. BibleFi primary chain = Base mainnet (chain_id: 8453).",
+      "properties": {
+        "block_number": { "type": "integer", "minimum": 0 },
+        "tx_hash": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$" },
+        "gas_used": { "type": "integer", "minimum": 0 },
+        "chain_id": { "type": "integer", "minimum": 1, "description": "Default: 8453 (Base mainnet)" },
+        "contract_address": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$" }
+      }
     }
   }
 }

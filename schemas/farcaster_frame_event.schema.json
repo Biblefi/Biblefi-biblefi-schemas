@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/farcaster_frame_event.schema.json",
+  "title": "FarcasterFrameEvent",
+  "description": "An interaction event from a BibleFi Farcaster Frame. BibleFi is deployed as a native Base App and Farcaster mini-app. Frame events capture user interactions with scripture views, tithing flows, DeFi strategy entries, and church discovery within Farcaster casts.",
+  "type": "object",
+  "required": ["event_id","schema_version","fid","frame_action","frame_uri","cast_hash","timestamp"],
+  "additionalProperties": false,
+  "properties": {
+    "event_id": { "type": "string", "format": "uuid" },
+    "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$", "examples": ["1.0.0"] },
+    "fid": { "type": "integer", "minimum": 1, "description": "Farcaster ID (FID) of the interacting user" },
+    "username": { "type": "string", "description": "Farcaster username (without @)" },
+    "custody_address": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$", "description": "Farcaster custody address" },
+    "verified_address": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$", "description": "Primary verified Ethereum address linked to Farcaster account" },
+    "frame_action": {
+      "type": "string",
+      "enum": ["view","click","submit","share","mint","tithe","stake","unstake","claim","vote","navigate"],
+      "description": "Action taken within the BibleFi Farcaster Frame"
+    },
+    "frame_uri": { "type": "string", "format": "uri", "description": "URI of the BibleFi Farcaster Frame that triggered this event" },
+    "cast_hash": { "type": "string", "minLength": 1, "description": "Hash of the Farcaster cast containing this frame" },
+    "channel_id": { "type": "string", "description": "Farcaster channel where the frame was cast. BibleFi channels: /biblefi, /faith, /christianity, /defi" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "button_index": { "type": "integer", "minimum": 1, "maximum": 4, "description": "Farcaster Frame button index (1-4)" },
+    "input_text": { "type": "string", "description": "Text input from the frame if applicable" },
+    "state": { "type": "string", "description": "Serialized frame state" },
+    "transaction_id": { "type": "string", "format": "uuid", "description": "BibleFi transaction record ID for frame actions that initiate a tracked transaction" },
+    "connected_wallet": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$", "description": "Wallet connected via Farcaster frame authentication (Base chain)" },
+    "chain_id": { "type": "integer", "minimum": 1, "description": "Chain ID for transaction-type frame actions. Base mainnet = 8453" },
+    "biblefi_action": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "BibleFi-specific action metadata linking this frame event to BibleFi protocol objects",
+      "required": ["action_type"],
+      "properties": {
+        "action_type": { "type": "string", "enum": ["scripture_view","tithe_initiate","tithe_complete","strategy_view","strategy_enter","strategy_exit","church_follow","verse_share","devotional_complete","wallet_connect"] },
+        "scripture_record_id": { "type": "string", "format": "uuid", "description": "Links to scripture_record" },
+        "strategy_id": { "type": "string", "format": "uuid", "description": "Links to defi_strategy" },
+        "church_id": { "type": "string", "format": "uuid", "description": "Links to church_record" },
+        "tithe_transaction_id": { "type": "string", "format": "uuid", "description": "Links to tithe_transaction on completion" },
+        "amount_wei": { "type": "string", "pattern": "^\\d+$", "description": "Transaction amount in wei for mint/tithe/stake actions" },
+        "asset_symbol": { "type": "string", "examples": ["USDC","ETH","BFI"] },
+        "estimated_gas_wei": { "type": "string", "pattern": "^\\d+$", "description": "Estimated gas cost in wei on Base chain" }
+      }
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  }
+}
