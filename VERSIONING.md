@@ -1,12 +1,49 @@
 # BibleFi Schema Versioning Policy
 
-## Principles
+BibleFi schemas use [Semantic Versioning 2.0.0](https://semver.org/) (`MAJOR.MINOR.PATCH`) to communicate the scope and impact of every change.
 
-BibleFi schemas follow [Semantic Versioning (SemVer)](https://semver.org/):
+---
 
-- **MAJOR** — Breaking changes (removed fields, changed types, tightened constraints)
-- **MINOR** — Backward-compatible additions (new optional fields, new enum values)
-- **PATCH** — Non-breaking fixes (typos in descriptions, clarifications, example updates)
+## Version Fields
+
+Every schema document contains a top-level `schema_version` field (type `string`, pattern `^\d+\.\d+\.\d+$`).
+Every JSON payload **must** declare the version of the schema it was validated against so consumers can apply the correct validation logic.
+
+The `$id` URI of each schema file also encodes a stable identifier. When a MAJOR version bump occurs the URI will be updated to include the major version:
+
+```
+https://schemas.biblefi.io/v2/<schema-name>.schema.json
+```
+
+---
+
+## Semantic Versioning Rules
+
+| Increment | When to use | Examples |
+|-----------|-------------|---------|
+| **PATCH** (`x.y.Z`) | Backward-compatible fixes: correcting descriptions, tightening regex patterns, fixing typos. | `1.0.0` → `1.0.1` |
+| **MINOR** (`x.Y.z`) | Backward-compatible additions: new **optional** properties, relaxing an existing constraint, adding new permitted `enum` values. | `1.0.1` → `1.1.0` |
+| **MAJOR** (`X.y.z`) | Breaking changes: removing or renaming required properties, adding new required properties, narrowing existing constraints, changing a property's type. | `1.1.0` → `2.0.0` |
+
+---
+
+## Change Process
+
+1. **Propose** – Open a GitHub issue describing the schema change and its justification.
+2. **Draft** – Submit a pull request with the schema changes and an updated `schema_version` value in all affected `.schema.json` files.
+3. **Review** – At least one maintainer must approve the PR. Breaking changes (MAJOR) require sign-off from two maintainers.
+4. **Changelog** – Update `CHANGELOG.md` (if present) with a summary under the new version heading.
+5. **Merge & Tag** – Merge to `main` and create a Git tag following the pattern `v<MAJOR>.<MINOR>.<PATCH>` (e.g. `v2.0.0`).
+
+---
+
+## Compatibility Guarantees
+
+- **Within a MAJOR version**, all schema changes are backward-compatible.
+- **Across MAJOR versions**, no compatibility is guaranteed. Consumer applications must explicitly migrate to the new MAJOR version.
+- Schema files will be retained for **at least 24 months** after a new MAJOR version is published to allow migration.
+
+---
 
 ## Current Schema Versions
 
@@ -16,12 +53,19 @@ BibleFi schemas follow [Semantic Versioning (SemVer)](https://semver.org/):
 | `scripture_record` (v1 compat) | 1.0.0 | ⚠️ Deprecated | Retained until 2028-03 per 24-month policy. File: `scripture_record.v1.schema.json` |
 | `tithe_transaction` | 1.0.0 | ✅ Stable | New in v2 suite |
 | `farcaster_frame_event` | 1.0.0 | ✅ Stable | New in v2 suite |
-| `agent_envelope` | 2.0.0 | ✅ Stable | Adds routing, security_context, farcaster_context, base_chain_context |
+| `agent_envelope` | 2.0.0 | ✅ Stable | Adds routing, security_context, farcaster_context, base_chain_context; extended payload_type enum |
 | `church_record` | 1.0.0 | ✅ Stable | |
 | `defi_strategy` | 1.0.0 | ✅ Stable | |
 | `security_finding` | 1.0.0 | ✅ Stable | |
 | `wallet_record` | 1.0.0 | ✅ Stable | |
 | `user_profile` | 1.0.0 | ✅ Stable | |
+| `agent_task` | 1.0.0 | ✅ Stable | Agentic pipeline |
+| `agent_run_log` | 1.0.0 | ✅ Stable | Agentic pipeline |
+| `scripture_seed_batch` | 1.0.0 | ✅ Stable | Agentic pipeline |
+| `cross_language_validation` | 1.0.0 | ✅ Stable | Agentic pipeline |
+| `theological_validation` | 1.0.0 | ✅ Stable | Agentic pipeline |
+
+---
 
 ## Migration: scripture_record v1.0.0 → v2.0.0
 
@@ -58,22 +102,24 @@ BibleFi schemas follow [Semantic Versioning (SemVer)](https://semver.org/):
 
 3. **Update `schema_version`** from `"1.0.0"` to `"2.0.0"`.
 
-## Migration: agent_envelope v1.0.0 → v2.0.0
+---
+
+## Migration: agent_envelope v1.x → v2.0.0
 
 ### Non-Breaking Additions
 
 All new fields in `agent_envelope` v2.0.0 are optional:
-- `routing` — Message routing metadata
+- `routing` — Message routing metadata (destination/source agent, priority, TTL, correlation_id)
 - `security_context` — Classification, trust level, sandboxing
 - `farcaster_context` — Farcaster Frame origin metadata
 - `base_chain_context` — Base chain transaction context
 
 ### Updated payload_type Enum
 
-The `payload_type` enum now includes:
-`tithe_transaction`, `farcaster_frame_event`, `governance_vote`, `wallet_record`, `user_profile`
+The `payload_type` enum in v2.0.0 now includes all supported schemas:
+`scripture_record`, `church_record`, `defi_strategy`, `security_finding`, `wallet_record`, `user_profile`, `tithe_transaction`, `farcaster_frame_event`, `agent_task`, `agent_run_log`, `scripture_seed_batch`, `cross_language_validation`, `theological_validation`, `generic`
 
-If your producer sets `payload_type` to an unlisted value, update to the new enum.
+---
 
 ## Deprecation Policy
 
@@ -83,12 +129,8 @@ Deprecated schemas are retained for **24 months** after their deprecation date. 
 |--------|-----------|--------------|
 | `scripture_record` v1.0.0 | 2026-03 | 2028-03 |
 
-## $id Versioning Convention
+---
 
-Stable schemas use versioned `$id` URIs:
-- v2: `https://schemas.biblefi.io/v2/scripture_record.schema.json`
-- v1 (deprecated): `https://schemas.biblefi.io/v1/scripture_record.schema.json`
+## Pre-Release Versions
 
-New schemas without a breaking-change history use unversioned URIs:
-- `https://schemas.biblefi.io/tithe_transaction.schema.json`
-- `https://schemas.biblefi.io/farcaster_frame_event.schema.json`
+Pre-release schemas use the standard SemVer pre-release suffix (e.g. `1.0.0-alpha.1`, `1.0.0-rc.1`) and **must not** be used in production deployments.

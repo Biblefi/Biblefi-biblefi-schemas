@@ -18,14 +18,19 @@ BibleFi is the world's first Christian-faith-based DeFi dApp, built on **Base ch
 | `schemas/church_record.schema.json` | 1.0.0 | ✅ Stable | Church profiles with on-chain treasury, location, and contact info |
 | `schemas/defi_strategy.schema.json` | 1.0.0 | ✅ Stable | DeFi yield strategies with protocol, asset, tithe allocation, and rebalance policy |
 | `schemas/security_finding.schema.json` | 1.0.0 | ✅ Stable | Security audit findings with CVSS and CWE |
-| `schemas/wallet_record.schema.json` | 1.0.0 | ✅ Stable | User wallet records |
-| `schemas/user_profile.schema.json` | 1.0.0 | ✅ Stable | User profiles |
+| `schemas/wallet_record.schema.json` | 1.0.0 | ✅ Stable | On-chain wallet identity records |
+| `schemas/user_profile.schema.json` | 1.0.0 | ✅ Stable | BibleFi user profiles |
+| `schemas/agent_task.schema.json` | 1.0.0 | ✅ Stable | Agentic pipeline task specifications |
+| `schemas/agent_run_log.schema.json` | 1.0.0 | ✅ Stable | Hourly execution cycle run logs |
+| `schemas/scripture_seed_batch.schema.json` | 1.0.0 | ✅ Stable | Batches of validated scriptures seeded to the dApp |
+| `schemas/cross_language_validation.schema.json` | 1.0.0 | ✅ Stable | Hebrew / Greek / Aramaic cross-reference results |
+| `schemas/theological_validation.schema.json` | 1.0.0 | ✅ Stable | Concordance & dictionary validation results |
 
 ---
 
 ## Quick Start
 
-All schemas use **JSON Schema Draft 2020-12** and enforce `additionalProperties: false` throughout.
+All schemas use **JSON Schema Draft 2020-12**. Most schemas enforce `additionalProperties: false` throughout; the current exception is `schemas/agent_envelope.schema.json`, where `AgentEnvelope.payload` intentionally allows a flexible object shape and payload validation is performed out-of-band using the per-type schema.
 
 ```bash
 npm install ajv ajv-formats
@@ -85,12 +90,55 @@ See [docs/biblefi_schema_guide.md](docs/biblefi_schema_guide.md) for the complet
 
 All agent-to-agent messages are wrapped in `AgentEnvelope` v2.0.0, which adds routing, security context (classification, trust level, sandboxing), Farcaster context, and Base chain context.
 
+### Agentic Pipeline
+
+The BibleFi hourly scripture-seeding pipeline uses `agent_task`, `agent_run_log`, `scripture_seed_batch`, `cross_language_validation`, and `theological_validation` schemas. See [ARCHITECTURE.md](./ARCHITECTURE.md) for a full description.
+
+---
+
+## Validation Example (Node.js / Ajv)
+
+```js
+import Ajv from "ajv/dist/2020.js";
+import addFormats from "ajv-formats";
+import envelope from "./schemas/agent_envelope.schema.json" assert { type: "json" };
+
+const ajv = new Ajv({ strict: true });
+addFormats(ajv);
+
+const validate = ajv.compile(envelope);
+
+const payload = {
+  envelope_id: "550e8400-e29b-41d4-a716-446655440000",
+  schema_version: "2.0.0",
+  created_at: "2024-01-01T00:00:00Z",
+  payload_type: "scripture_record",
+  payload: { record_id: "660e8400-e29b-41d4-a716-446655440001" }
+};
+
+const valid = validate(payload);
+if (!valid) console.error(validate.errors);
+```
+
+---
+
+## Versioning
+
+See [VERSIONING.md](./VERSIONING.md) for the full versioning policy. In summary:
+
+| Change type | Version bump |
+|-------------|-------------|
+| Bug-fix / description update | PATCH (`1.0.x`) |
+| New optional field | MINOR (`1.x.0`) |
+| Breaking change | MAJOR (`x.0.0`) |
+
 ---
 
 ## Documentation
 
 - [Schema Guide](docs/biblefi_schema_guide.md) — Full guide with examples, content hash computation, tithing flow, and Ajv validation
 - [Versioning Policy](VERSIONING.md) — Schema versioning, deprecation timelines, and migration notes
+- [Architecture](ARCHITECTURE.md) — Agentic pipeline architecture & scalability guide
 
 ---
 
@@ -101,3 +149,18 @@ All agent-to-agent messages are wrapped in `AgentEnvelope` v2.0.0, which adds ro
 > *"Honor the Lord with your wealth, with the firstfruits of all your crops."* — Proverbs 3:9
 
 > *"Each of you should give what you have decided in your heart to give, not reluctantly or under compulsion, for God loves a cheerful giver."* — 2 Corinthians 9:7
+
+---
+
+## Contributing
+
+1. Fork the repository and create a feature branch.
+2. Edit the relevant `.schema.json` file(s) under `schemas/`.
+3. Bump the `schema_version` field in the modified schemas according to [VERSIONING.md](./VERSIONING.md).
+4. Open a pull request with a clear description of the change and its rationale.
+
+---
+
+## License
+
+[MIT](./LICENSE)

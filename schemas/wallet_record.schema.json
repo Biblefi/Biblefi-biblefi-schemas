@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/wallet_record.schema.json",
+  "title": "WalletRecord",
+  "description": "An on-chain wallet identity for a user or church participant in the BibleFi ecosystem. Captures EVM address, supported chains, wallet type, optional balance snapshot, and treasury status.",
+  "type": "object",
+  "required": ["wallet_id", "schema_version", "address", "chain_ids", "wallet_type"],
+  "additionalProperties": false,
+  "properties": {
+    "wallet_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique identifier for this wallet record (UUID v4)."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the WalletRecord schema used (e.g. '1.0.0').",
+      "examples": ["1.0.0"]
+    },
+    "address": {
+      "type": "string",
+      "pattern": "^0x[0-9a-fA-F]{40}$",
+      "description": "EVM-compatible wallet address (checksummed or lowercase).",
+      "examples": ["0xAbCdEf0123456789AbCdEf0123456789AbCdEf01"]
+    },
+    "chain_ids": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "uniqueItems": true,
+      "minItems": 1,
+      "description": "List of EVM chain IDs on which this wallet is active (e.g. 1 for Ethereum Mainnet, 137 for Polygon).",
+      "examples": [[1, 137]]
+    },
+    "wallet_type": {
+      "type": "string",
+      "enum": ["eoa", "multisig", "smart_wallet", "hardware"],
+      "description": "Classification of the wallet. 'eoa' = externally-owned account, 'multisig' = multi-signature contract, 'smart_wallet' = account-abstraction contract, 'hardware' = hardware-backed EOA."
+    },
+    "ens_name": {
+      "type": "string",
+      "description": "ENS domain or other human-readable name associated with this wallet (e.g. 'mychurch.eth')."
+    },
+    "label": {
+      "type": "string",
+      "description": "User-defined label for this wallet (e.g. 'Offering wallet', 'Hot wallet')."
+    },
+    "owner_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the user_profile record that owns this wallet."
+    },
+    "church_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the church_record this wallet is associated with."
+    },
+    "balance_snapshot": {
+      "type": "object",
+      "description": "Optional point-in-time snapshot of token balances held by this wallet.",
+      "required": ["captured_at"],
+      "additionalProperties": false,
+      "properties": {
+        "captured_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 UTC timestamp when this snapshot was taken."
+        },
+        "tokens": {
+          "type": "array",
+          "description": "List of token balances included in this snapshot.",
+          "items": {
+            "type": "object",
+            "required": ["symbol", "amount"],
+            "additionalProperties": false,
+            "properties": {
+              "symbol": {
+                "type": "string",
+                "description": "Token ticker symbol (e.g. 'ETH', 'USDC')."
+              },
+              "contract_address": {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{40}$",
+                "description": "EVM contract address of the token. Omit for native assets."
+              },
+              "amount": {
+                "type": "string",
+                "description": "Raw token balance as a string to preserve precision (e.g. '1000000000000000000' for 1 ETH)."
+              },
+              "amount_usd": {
+                "type": "number",
+                "minimum": 0,
+                "description": "USD-equivalent value of the balance at snapshot time."
+              }
+            }
+          }
+        }
+      }
+    },
+    "is_treasury": {
+      "type": "boolean",
+      "default": false,
+      "description": "Indicates whether this wallet serves as a church treasury wallet."
+    },
+    "verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this wallet address has been verified by the BibleFi platform."
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true,
+      "description": "Optional free-form tags for filtering or categorisation."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when this wallet record was created."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when this wallet record was last updated."
+    }
+  },
+  "examples": [
+    {
+      "wallet_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "schema_version": "1.0.0",
+      "address": "0xAbCdEf0123456789AbCdEf0123456789AbCdEf01",
+      "chain_ids": [1, 137],
+      "wallet_type": "multisig",
+      "ens_name": "gracechurch.eth",
+      "label": "Treasury Multisig",
+      "church_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "is_treasury": true,
+      "verified": true,
+      "balance_snapshot": {
+        "captured_at": "2024-01-01T00:00:00Z",
+        "tokens": [
+          {
+            "symbol": "ETH",
+            "amount": "5000000000000000000",
+            "amount_usd": 18000.0
+          },
+          {
+            "symbol": "USDC",
+            "contract_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "amount": "10000000000",
+            "amount_usd": 10000.0
+          }
+        ]
+      },
+      "tags": ["treasury", "church"],
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-15T12:00:00Z"
+    }
+  ]
+}

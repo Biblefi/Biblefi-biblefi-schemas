@@ -42,7 +42,7 @@
       "additionalProperties": false,
       "description": "Scripture backing this giving transaction. Recommended: Malachi 3:10 for tithes, Proverbs 3:9 for firstfruits, 2 Corinthians 9:7 for offerings, Luke 21:4 for widow's offering.",
       "properties": {
-        "book": { "type": "string" },
+        "book": { "type": "string", "minLength": 1 },
         "chapter": { "type": "integer", "minimum": 1 },
         "verses": {
           "oneOf": [

@@ -1,0 +1,51 @@
+name: Validate JSON Schemas
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install ajv-cli and ajv-formats
+        run: |
+          npm install -g ajv-cli
+          npm install ajv-formats
+
+      - name: Validate each schema file is valid JSON
+        run: |
+          echo "Checking all .schema.json files for valid JSON..."
+          failed=0
+          for schema in schemas/*.schema.json; do
+            if node -e "JSON.parse(require('fs').readFileSync('$schema', 'utf8'))" 2>/dev/null; then
+              echo "  ✅  $schema — valid JSON"
+            else
+              echo "  ❌  $schema — INVALID JSON"
+              failed=1
+            fi
+          done
+          if [ "$failed" -eq 1 ]; then
+            echo "One or more schema files contain invalid JSON."
+            exit 1
+          fi
+
+      - name: Confirm all schemas are parseable JSON
+        run: |
+          count=$(ls schemas/*.schema.json | wc -l)
+          echo "✅ All ${count} schema file(s) in schemas/ are valid, parseable JSON."

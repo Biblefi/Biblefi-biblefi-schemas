@@ -1,0 +1,224 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/agent_run_log.schema.json",
+  "title": "AgentRunLog",
+  "description": "Records the outcome of a single chronological execution cycle of the BibleFi agentic scripture-pipeline. One AgentRunLog is created by the master agent at the start of every hourly run and updated as subagents complete their tasks.",
+  "type": "object",
+  "required": ["run_id", "schema_version", "triggered_at", "trigger_type", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique identifier for this execution run (UUID v4)."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the AgentRunLog schema (e.g. '1.0.0').",
+      "examples": ["1.0.0"]
+    },
+    "triggered_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when the master agent was triggered."
+    },
+    "trigger_type": {
+      "type": "string",
+      "enum": ["scheduled", "manual", "event"],
+      "description": "'scheduled' = invoked by the hourly cron; 'manual' = triggered by an operator; 'event' = triggered by an on-chain or dApp event."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["running", "completed", "failed", "partial"],
+      "description": "Overall status of this execution cycle. 'partial' indicates that some subagent tasks succeeded while others failed."
+    },
+    "master_agent_id": {
+      "type": "string",
+      "description": "Identifier of the master agent instance that orchestrated this run."
+    },
+    "master_sandbox_id": {
+      "type": "string",
+      "description": "Sandbox environment ID used by the master agent for this run."
+    },
+    "pipeline_stages": {
+      "type": "array",
+      "description": "Ordered list of pipeline stages executed during this run, each corresponding to an agent type.",
+      "items": {
+        "type": "object",
+        "required": ["stage", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "stage": {
+            "type": "string",
+            "enum": [
+              "scripture_search",
+              "language_validation",
+              "theological_validation",
+              "dapp_seeding"
+            ],
+            "description": "Name of the pipeline stage."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "running", "completed", "failed", "skipped"],
+            "description": "Status of this stage."
+          },
+          "task_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "UUIDs of AgentTask records belonging to this stage."
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 UTC timestamp when this stage began."
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 UTC timestamp when this stage finished."
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Aggregate statistics for this run.",
+      "additionalProperties": false,
+      "properties": {
+        "verses_scanned": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total Bible verses examined by scripture_search agents during this run."
+        },
+        "scriptures_found": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of financially-themed scriptures identified before validation."
+        },
+        "scriptures_language_validated": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of scriptures that passed cross-language validation (Hebrew, Greek, Aramaic)."
+        },
+        "scriptures_theologically_validated": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of scriptures that passed theological validation via concordances and dictionaries."
+        },
+        "scriptures_seeded": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of validated scripture records pushed to the BibleFi dApp this cycle."
+        },
+        "tasks_total": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of AgentTask records spawned during this run."
+        },
+        "tasks_completed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of tasks that reached 'completed' status."
+        },
+        "tasks_failed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of tasks that reached 'failed' status."
+        },
+        "duration_seconds": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total wall-clock time in seconds from triggered_at to completed_at."
+        }
+      }
+    },
+    "seed_batch_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the ScriptureSeedBatch record produced by the dApp seeder stage of this run, if applicable."
+    },
+    "error_summary": {
+      "type": "string",
+      "description": "High-level description of any errors that prevented the run from completing successfully."
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when the run reached a terminal status."
+    },
+    "next_scheduled_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp of the next planned run, typically one hour after triggered_at."
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true,
+      "description": "Optional free-form tags for observability and filtering."
+    }
+  },
+  "examples": [
+    {
+      "run_id": "run-2024-01-01-0000-uuid",
+      "schema_version": "1.0.0",
+      "triggered_at": "2024-01-01T00:00:00Z",
+      "trigger_type": "scheduled",
+      "status": "completed",
+      "master_agent_id": "master-agent-001",
+      "master_sandbox_id": "sandbox-master-20240101T000000Z",
+      "pipeline_stages": [
+        {
+          "stage": "scripture_search",
+          "status": "completed",
+          "task_ids": ["a1b2c3d4-0001-0001-0001-000000000001", "a1b2c3d4-0001-0001-0001-000000000002"],
+          "started_at": "2024-01-01T00:00:01Z",
+          "completed_at": "2024-01-01T00:08:00Z"
+        },
+        {
+          "stage": "language_validation",
+          "status": "completed",
+          "task_ids": ["a1b2c3d4-0002-0002-0002-000000000001"],
+          "started_at": "2024-01-01T00:08:01Z",
+          "completed_at": "2024-01-01T00:20:00Z"
+        },
+        {
+          "stage": "theological_validation",
+          "status": "completed",
+          "task_ids": ["a1b2c3d4-0003-0003-0003-000000000001"],
+          "started_at": "2024-01-01T00:20:01Z",
+          "completed_at": "2024-01-01T00:45:00Z"
+        },
+        {
+          "stage": "dapp_seeding",
+          "status": "completed",
+          "task_ids": ["a1b2c3d4-0004-0004-0004-000000000001"],
+          "started_at": "2024-01-01T00:45:01Z",
+          "completed_at": "2024-01-01T00:50:00Z"
+        }
+      ],
+      "metrics": {
+        "verses_scanned": 31102,
+        "scriptures_found": 2084,
+        "scriptures_language_validated": 2001,
+        "scriptures_theologically_validated": 1987,
+        "scriptures_seeded": 12,
+        "tasks_total": 6,
+        "tasks_completed": 6,
+        "tasks_failed": 0,
+        "duration_seconds": 3000
+      },
+      "seed_batch_id": "batch-2024-01-01T00-uuid",
+      "completed_at": "2024-01-01T00:50:00Z",
+      "next_scheduled_at": "2024-01-01T01:00:00Z"
+    }
+  ]
+}
