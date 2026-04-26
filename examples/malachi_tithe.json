@@ -1,0 +1,42 @@
+{
+  "transaction_id": "660e8400-e29b-41d4-a716-446655440001",
+  "schema_version": "1.0.0",
+  "sender_wallet": "0x1234567890123456789012345678901234567890",
+  "recipient_wallet": "0xabcdef0123456789abcdef0123456789abcdef01",
+  "recipient_church_id": "770e8400-e29b-41d4-a716-446655440002",
+  "amount_wei": "10000000",
+  "amount_usd": 10.00,
+  "asset": {
+    "symbol": "USDC",
+    "contract_address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "chain_id": 8453,
+    "decimals": 6,
+    "coingecko_id": "usd-coin"
+  },
+  "chain_id": 8453,
+  "tx_hash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+  "block_number": 12345679,
+  "transaction_type": "tithe",
+  "scripture_reference": {
+    "book": "Malachi",
+    "chapter": 3,
+    "verses": 10,
+    "notes": "Bring the whole tithe into the storehouse"
+  },
+  "percentage_of_income": 10.0,
+  "is_recurring": true,
+  "recurrence_interval": "monthly",
+  "smart_contract_routed": true,
+  "contract_address": "0x7bEda57074AA917FF0993fb329E16C2c188baF08",
+  "attestation": {
+    "chain_id": 8453,
+    "contract_address": "0x7bEda57074AA917FF0993fb329E16C2c188baF08",
+    "attestation_type": "eas_attestation",
+    "tx_hash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+    "attested_at": "2026-03-30T03:01:00Z",
+    "attested_by": "biblefi-tithe-attestor"
+  },
+  "tags": ["tithe", "malachi-3-10", "monthly", "usdc"],
+  "created_at": "2026-03-30T03:00:00Z",
+  "updated_at": "2026-03-30T03:01:00Z"
+}

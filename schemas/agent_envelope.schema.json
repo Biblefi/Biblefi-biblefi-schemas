@@ -50,7 +50,8 @@
     },
     "payload": {
       "type": "object",
-      "description": "The actual data payload. Must conform to the schema identified by 'payload_type'. Payload validation is out-of-band and performed using the per-type schema."
+      "additionalProperties": true,
+      "description": "The actual data payload. Must conform to the schema identified by 'payload_type'. Payload validation is out-of-band and performed using the per-type schema. additionalProperties is intentionally true here to allow flexible payload shapes validated by per-type schemas."
     },
     "sender": {
       "type": "object",
