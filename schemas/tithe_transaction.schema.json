@@ -24,7 +24,7 @@
         "symbol": { "type": "string", "examples": ["USDC","ETH","WETH","BFI"] },
         "contract_address": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$", "description": "Use zero address 0x0000000000000000000000000000000000000000 for native ETH" },
         "chain_id": { "type": "integer", "minimum": 1 },
-        "decimals": { "type": "integer", "minimum": 0, "maximum": 18 },
+        "decimals": { "type": "integer", "minimum": 0, "maximum": 255 },
         "coingecko_id": { "type": "string" }
       }
     },
