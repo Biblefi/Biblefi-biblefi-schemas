@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/v1/farcaster_frame_event.schema.json",
+  "title": "FarcasterFrameEvent",
+  "description": "An interaction event from a BibleFi Farcaster Frame. BibleFi is deployed as a native Base App and Farcaster mini-app. Frame events capture user interactions with scripture views, tithing flows, DeFi strategy entries, and church discovery within Farcaster casts.",
+  "type": "object",
+  "required": ["event_id","schema_version","fid","frame_action","frame_uri","cast_hash","timestamp"],
+  "additionalProperties": false,
+  "properties": {
+    "event_id": { "type": "string", "format": "uuid", "description": "Globally unique identifier for this frame event (UUID v4). NOTE: format:uuid is an assertion in validators that enforce formats (e.g. Ajv with ajv-formats); treat as annotation-only in validators that do not." },
+    "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$", "examples": ["1.0.0"], "description": "Semantic version of the FarcasterFrameEvent schema used. Must be 1.x.x for documents validated against this schema ($id v1)." },
+    "fid": { "type": "integer", "minimum": 1, "description": "Farcaster ID (FID) of the interacting user. FIDs are assigned by the Farcaster protocol." },
+    "username": { "type": "string", "description": "Farcaster username of the interacting user (without @)." },
+    "custody_address": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$", "description": "Farcaster custody address for this FID." },
+    "verified_address": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$", "description": "Primary verified Ethereum address linked to this Farcaster account." },
+    "frame_action": {
+      "type": "string",
+      "enum": ["view","click","submit","share","mint","tithe","stake","unstake","claim","vote","navigate"],
+      "description": "Action taken within the BibleFi Farcaster Frame."
+    },
+    "frame_uri": {
+      "type": "string",
+      "format": "uri",
+      "description": "URI of the BibleFi Farcaster Frame that triggered this event. NOTE: format:uri is an assertion in validators that enforce formats; treat as annotation-only in validators that do not. Ensure frame_uri does not embed user-specific tokens or secrets in query parameters before logging or persisting."
+    },
+    "cast_hash": { "type": "string", "minLength": 1, "description": "Hash of the Farcaster cast containing this frame. Must not be empty." },
+    "channel_id": { "type": "string", "description": "Farcaster channel where the frame was cast (e.g. /biblefi, /faith, /christianity, /defi)." },
+    "timestamp": { "type": "string", "format": "date-time", "description": "ISO 8601 UTC timestamp when the frame interaction occurred." },
+    "button_index": { "type": "integer", "minimum": 1, "maximum": 4, "description": "Farcaster Frame button index (1–4) that was clicked, if applicable." },
+    "input_text": { "type": "string", "description": "Text input submitted from the frame, if applicable." },
+    "state": { "type": "string", "description": "Serialized frame state passed back with this interaction." },
+    "transaction_id": { "type": "string", "format": "uuid", "description": "BibleFi transaction record ID (UUID v4) for frame actions that initiate a tracked on-chain transaction." },
+    "connected_wallet": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$", "description": "Wallet connected via Farcaster frame authentication (Base chain)." },
+    "chain_id": { "type": "integer", "minimum": 1, "description": "EVM chain ID for transaction-type frame actions. Base mainnet = 8453." },
+    "biblefi_action": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "BibleFi-specific action metadata linking this frame event to BibleFi protocol objects.",
+      "required": ["action_type"],
+      "properties": {
+        "action_type": {
+          "type": "string",
+          "enum": ["scripture_view","tithe_initiate","tithe_complete","strategy_view","strategy_enter","strategy_exit","church_follow","verse_share","devotional_complete","wallet_connect"],
+          "description": "The type of BibleFi action performed within the frame."
+        },
+        "scripture_record_id": { "type": "string", "format": "uuid", "description": "Links to a scripture_record (UUID v4)." },
+        "strategy_id": { "type": "string", "format": "uuid", "description": "Links to a defi_strategy (UUID v4)." },
+        "church_id": { "type": "string", "format": "uuid", "description": "Links to a church_record (UUID v4)." },
+        "tithe_transaction_id": { "type": "string", "format": "uuid", "description": "Links to a tithe_transaction on completion (UUID v4)." },
+        "amount_wei": { "type": "string", "pattern": "^\\d+$", "description": "Transaction amount in wei for mint/tithe/stake actions (uint256 as string)." },
+        "asset_symbol": { "type": "string", "minLength": 1, "examples": ["USDC","ETH","BFI"], "description": "Token symbol for the transaction." },
+        "estimated_gas_wei": { "type": "string", "pattern": "^\\d+$", "description": "Estimated gas cost in wei on Base chain (uint256 as string)." }
+      }
+    },
+    "created_at": { "type": "string", "format": "date-time", "description": "ISO 8601 UTC timestamp when this record was created." },
+    "updated_at": { "type": "string", "format": "date-time", "description": "ISO 8601 UTC timestamp when this record was last updated." }
+  }
+}

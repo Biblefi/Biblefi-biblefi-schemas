@@ -23,10 +23,9 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install ajv-cli and ajv-formats
+      - name: Install dependencies
         run: |
-          npm install -g ajv-cli
-          npm install ajv-formats
+          npm install
 
       - name: Validate each schema file is valid JSON
         run: |
@@ -37,6 +36,7 @@ jobs:
               echo "  ✅  $schema — valid JSON"
             else
               echo "  ❌  $schema — INVALID JSON"
+              node -e "JSON.parse(require('fs').readFileSync('$schema', 'utf8'))" 2>&1 || true
               failed=1
             fi
           done
@@ -45,7 +45,162 @@ jobs:
             exit 1
           fi
 
-      - name: Confirm all schemas are parseable JSON
+      - name: Validate each schema is a valid JSON Schema (Draft 2020-12)
+        run: |
+          echo "Validating all .schema.json files against JSON Schema Draft 2020-12 meta-schema..."
+          node - << 'EOF'
+          const { readFileSync, readdirSync } = require('fs');
+          const Ajv = require('ajv/dist/2020');
+          const addFormats = require('ajv-formats');
+
+          const ajv = new Ajv({ strict: true, allErrors: true });
+          addFormats(ajv);
+
+          const schemaFiles = readdirSync('schemas').filter(f => f.endsWith('.schema.json'));
+          let failed = 0;
+
+          for (const file of schemaFiles) {
+            const path = `schemas/${file}`;
+            let schema;
+            try {
+              schema = JSON.parse(readFileSync(path, 'utf8'));
+            } catch (e) {
+              console.error(`  ❌  ${path} — JSON parse error: ${e.message}`);
+              failed++;
+              continue;
+            }
+            try {
+              ajv.compile(schema);
+              console.log(`  ✅  ${path} — valid JSON Schema`);
+            } catch (e) {
+              console.error(`  ❌  ${path} — invalid JSON Schema: ${e.message}`);
+              failed++;
+            }
+          }
+
+          if (failed > 0) {
+            console.error(`\n${failed} schema file(s) failed JSON Schema validation.`);
+            process.exit(1);
+          }
+          console.log(`\n✅ All ${schemaFiles.length} schema file(s) are valid JSON Schema Draft 2020-12.`);
+          EOF
+
+      - name: Validate sample payloads against schemas
+        run: |
+          echo "Validating sample payloads against schemas..."
+          node - << 'EOF'
+          const { readFileSync } = require('fs');
+          const Ajv = require('ajv/dist/2020');
+          const addFormats = require('ajv-formats');
+
+          const ajv = new Ajv({ strict: false, allErrors: true });
+          addFormats(ajv);
+
+          const load = (path) => JSON.parse(readFileSync(path, 'utf8'));
+
+          // Load all schemas so cross-references can resolve
+          const schemaFiles = require('fs').readdirSync('schemas').filter(f => f.endsWith('.schema.json'));
+          for (const file of schemaFiles) {
+            try { ajv.addSchema(load(`schemas/${file}`)); } catch (e) { /* already added */ }
+          }
+
+          // Helper: get validator for a schema by its $id (already added above)
+          const getValidator = (schemaId) => {
+            const v = ajv.getSchema(schemaId);
+            if (!v) throw new Error(`Schema not found: ${schemaId}`);
+            return v;
+          };
+
+          const cases = [
+            {
+              schemaId: 'https://schemas.biblefi.io/v2/agent_envelope.schema.json',
+              label: 'agent_envelope v2 — minimal valid',
+              data: {
+                envelope_id: '550e8400-e29b-41d4-a716-446655440000',
+                schema_version: '2.0.0',
+                created_at: '2024-01-01T00:00:00Z',
+                payload_type: 'scripture_record',
+                payload: {}
+              }
+            },
+            {
+              schemaId: 'https://schemas.biblefi.io/v2/agent_envelope.schema.json',
+              label: 'agent_envelope v2 — with routing and security_context',
+              data: {
+                envelope_id: '550e8400-e29b-41d4-a716-446655440001',
+                schema_version: '2.0.0',
+                created_at: '2024-01-01T00:00:00Z',
+                payload_type: 'tithe_transaction',
+                payload: {},
+                routing: {
+                  destination_agent: 'tithe-processor',
+                  priority: 'high',
+                  correlation_id: '660e8400-e29b-41d4-a716-446655440002'
+                },
+                security_context: {
+                  classification: 'confidential',
+                  trust_level: 'medium',
+                  sandboxed: true,
+                  requires_verification: true
+                }
+              }
+            },
+            {
+              schemaId: 'https://schemas.biblefi.io/v1/tithe_transaction.schema.json',
+              label: 'tithe_transaction — minimal valid',
+              data: {
+                transaction_id: '550e8400-e29b-41d4-a716-446655440000',
+                schema_version: '1.0.0',
+                sender_wallet: '0x1234567890123456789012345678901234567890',
+                recipient_wallet: '0xabcdef0123456789abcdef0123456789abcdef01',
+                amount_wei: '10000000',
+                asset: {
+                  symbol: 'USDC',
+                  contract_address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+                  chain_id: 8453,
+                  decimals: 6
+                },
+                chain_id: 8453,
+                transaction_type: 'tithe',
+                scripture_reference: { book: 'Malachi', chapter: 3, verses: 10 }
+              }
+            },
+            {
+              schemaId: 'https://schemas.biblefi.io/v1/farcaster_frame_event.schema.json',
+              label: 'farcaster_frame_event — minimal valid',
+              data: {
+                event_id: '550e8400-e29b-41d4-a716-446655440000',
+                schema_version: '1.0.0',
+                fid: 12345,
+                frame_action: 'tithe',
+                frame_uri: 'https://biblefi.io/frames/tithe',
+                cast_hash: '0xabcdef',
+                timestamp: '2024-01-01T00:00:00Z'
+              }
+            }
+          ];
+
+          let failed = 0;
+          for (const { schemaId, label, data } of cases) {
+            const validate = getValidator(schemaId);
+            const valid = validate(data);
+            if (valid) {
+              console.log(`  ✅  ${label}`);
+            } else {
+              console.error(`  ❌  ${label}`);
+              console.error('     Errors:', JSON.stringify(validate.errors, null, 2));
+              failed++;
+            }
+          }
+
+          if (failed > 0) {
+            console.error(`\n${failed} sample payload(s) failed validation.`);
+            process.exit(1);
+          }
+          console.log(`\n✅ All ${cases.length} sample payload(s) validated successfully.`);
+          EOF
+
+      - name: Confirm schema count
         run: |
           count=$(ls schemas/*.schema.json | wc -l)
-          echo "✅ All ${count} schema file(s) in schemas/ are valid, parseable JSON."
+          echo "✅ All ${count} schema file(s) in schemas/ passed validation."

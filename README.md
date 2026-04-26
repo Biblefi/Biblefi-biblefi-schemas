@@ -2,177 +2,122 @@
 
 Canonical [JSON Schema](https://json-schema.org/) definitions for the BibleFi protocol. Every message exchanged between agents, every record stored on-chain, and every payload surfaced by BibleFi APIs must conform to one of these schemas.
 
+BibleFi is the world's first Christian-faith-based DeFi dApp, built on **Base chain** (`chain_id: 8453`) and deployed as a native Base App and **Farcaster mini-app**. These schemas encode biblical stewardship principles — tithing (Malachi 3:10), generosity (2 Cor 9:7), firstfruits (Proverbs 3:9-10) — into verifiable, on-chain data structures.
+
 ---
 
-## Repository Layout
+## Schema Catalog
 
+| File | Version | Status | Description |
+|------|---------|--------|-------------|
+| `schemas/scripture_record.schema.json` | 2.0.0 | ✅ Stable | Bible passages with content hash (Keccak-256), AI metadata, hermeneutics, cross-references, and Base chain attestations |
+| `schemas/scripture_record.v1.schema.json` | 1.0.0 | ⚠️ Deprecated | Legacy passage record — retained until 2028-03 per versioning policy |
+| `schemas/tithe_transaction.schema.json` | 1.0.0 | ✅ Stable | Biblical giving transactions (tithe, offering, firstfruits) on Base chain |
+| `schemas/farcaster_frame_event.schema.json` | 1.0.0 | ✅ Stable | Farcaster Frame interaction events for BibleFi mini-app |
+| `schemas/agent_envelope.schema.json` | 2.0.0 | ✅ Stable | Universal agent message wrapper with routing, security context, Farcaster and Base chain context |
+| `schemas/church_record.schema.json` | 1.0.0 | ✅ Stable | Church profiles with on-chain treasury, location, and contact info |
+| `schemas/defi_strategy.schema.json` | 1.0.0 | ✅ Stable | DeFi yield strategies with protocol, asset, tithe allocation, and rebalance policy |
+| `schemas/security_finding.schema.json` | 1.0.0 | ✅ Stable | Security audit findings with CVSS and CWE |
+| `schemas/wallet_record.schema.json` | 1.0.0 | ✅ Stable | On-chain wallet identity records |
+| `schemas/user_profile.schema.json` | 1.0.0 | ✅ Stable | BibleFi user profiles |
+| `schemas/agent_task.schema.json` | 1.0.0 | ✅ Stable | Agentic pipeline task specifications |
+| `schemas/agent_run_log.schema.json` | 1.0.0 | ✅ Stable | Hourly execution cycle run logs |
+| `schemas/scripture_seed_batch.schema.json` | 1.0.0 | ✅ Stable | Batches of validated scriptures seeded to the dApp |
+| `schemas/cross_language_validation.schema.json` | 1.0.0 | ✅ Stable | Hebrew / Greek / Aramaic cross-reference results |
+| `schemas/theological_validation.schema.json` | 1.0.0 | ✅ Stable | Concordance & dictionary validation results |
+
+---
+
+## Quick Start
+
+All schemas use **JSON Schema Draft 2020-12**. Most schemas enforce `additionalProperties: false` throughout; the current exception is `schemas/agent_envelope.schema.json`, where `AgentEnvelope.payload` intentionally allows a flexible object shape and payload validation is performed out-of-band using the per-type schema.
+
+```bash
+npm install ajv ajv-formats
 ```
-schemas/
-  agent_envelope.schema.json          # Universal wrapper for all BibleFi payloads
-  scripture_record.schema.json        # Canonicalised Bible passage records
-  church_record.schema.json           # Church / faith-organisation profiles
-  defi_strategy.schema.json           # DeFi yield & staking strategy configurations
-  security_finding.schema.json        # Security audit & scan findings
-  wallet_record.schema.json           # On-chain wallet identity records
-  user_profile.schema.json            # BibleFi user profiles
-  agent_task.schema.json              # Agentic pipeline task specifications
-  agent_run_log.schema.json           # Hourly execution cycle run logs
-  scripture_seed_batch.schema.json    # Batches of validated scriptures seeded to the dApp
-  cross_language_validation.schema.json # Hebrew / Greek / Aramaic cross-reference results
-  theological_validation.schema.json  # Concordance & dictionary validation results
-ARCHITECTURE.md                       # Agentic pipeline architecture & scalability guide
-VERSIONING.md                         # Versioning policy and change process
-LICENSE
-README.md
+
+```javascript
+import Ajv from 'ajv/dist/2020.js';
+import addFormats from 'ajv-formats';
+import { readFileSync } from 'fs';
+
+const ajv = new Ajv();
+addFormats(ajv);
+
+const schema = JSON.parse(readFileSync('./schemas/tithe_transaction.schema.json', 'utf8'));
+const validate = ajv.compile(schema);
+
+const tithe = {
+  "transaction_id": "550e8400-e29b-41d4-a716-446655440000",
+  "schema_version": "1.0.0",
+  "sender_wallet": "0x1234567890123456789012345678901234567890",
+  "recipient_wallet": "0xabcdef0123456789abcdef0123456789abcdef01",
+  "amount_wei": "10000000",
+  "asset": {
+    "symbol": "USDC",
+    "contract_address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "chain_id": 8453,
+    "decimals": 6
+  },
+  "chain_id": 8453,
+  "transaction_type": "tithe",
+  "scripture_reference": { "book": "Malachi", "chapter": 3, "verses": 10 }
+};
+
+console.log(validate(tithe)); // true
 ```
 
 ---
 
-## Schemas
+## Key Concepts
 
-### `agent_envelope`
-The **universal wrapper** schema. Every payload transmitted between BibleFi agents or stored on-chain must be wrapped in an `AgentEnvelope`. The envelope carries the payload type discriminator, sender identity, an optional cryptographic signature, and routing metadata.
+### Content Hash (scripture_record v2)
 
-**Key fields:** `envelope_id`, `schema_version`, `created_at`, `payload_type`, `payload`, `sender`, `signature`
+Every scripture record includes a `content_hash` — a Keccak-256 hash of the NFC-normalized, trimmed UTF-8 text. This enables on-chain integrity verification via BibleFi attestation contracts on Base chain.
 
----
+```javascript
+import { keccak256, toBytes } from 'viem';
+const hash = keccak256(toBytes(text.normalize('NFC').trim()));
+```
 
-### `scripture_record`
-A canonicalised reference to a Bible passage. Includes the verbatim text, translation metadata (abbreviation, language, year), and an optional on-chain attestation linking the record to a smart contract or NFT.
+### Tithing Flow
 
-**Key fields:** `record_id`, `book`, `chapter`, `verses`, `translation`, `text`, `topics`, `attestation`
+`FarcasterFrameEvent (tithe_initiate)` → `TitheTransaction` → `Base chain tx` → `EAS attestation`
 
----
+See [docs/biblefi_schema_guide.md](docs/biblefi_schema_guide.md) for the complete tithing flow and example payloads.
 
-### `church_record`
-A profile for a church or faith-based organisation participating in the BibleFi ecosystem. Captures physical location, contact details, on-chain treasury identity (wallet address, ENS name, multisig), and verification status.
+### Agent Envelopes
 
-**Key fields:** `record_id`, `name`, `denomination`, `location`, `contact`, `on_chain_identity`, `verified`
+All agent-to-agent messages are wrapped in `AgentEnvelope` v2.0.0, which adds routing, security context (classification, trust level, sandboxing), Farcaster context, and Base chain context.
 
----
+### Agentic Pipeline
 
-### `defi_strategy`
-Describes a DeFi yield or staking strategy managed by the BibleFi protocol on behalf of a church or user. Includes the target protocol and asset, allocation rules, risk tier, expected APY range, optional automatic tithe distribution, and rebalancing policy.
-
-**Key fields:** `strategy_id`, `protocol`, `asset`, `allocation`, `risk_tier`, `expected_apy`, `tithe_allocation`, `rebalance_policy`
+The BibleFi hourly scripture-seeding pipeline uses `agent_task`, `agent_run_log`, `scripture_seed_batch`, `cross_language_validation`, and `theological_validation` schemas. See [ARCHITECTURE.md](./ARCHITECTURE.md) for a full description.
 
 ---
 
-### `security_finding`
-Tracks a security vulnerability or audit finding from discovery through remediation. Supports findings from manual audits, automated scans, and bug bounties. Includes CVSS scoring, CWE classification, proof-of-concept, and resolution details.
-
-**Key fields:** `finding_id`, `title`, `severity`, `status`, `target`, `cwe_ids`, `cvss`, `recommendation`, `resolution`
-
----
-
-### `wallet_record`
-An on-chain wallet identity for a user or church participant in the BibleFi ecosystem. Captures the EVM address, supported chain IDs, wallet type (EOA, multisig, smart wallet, or hardware), optional balance snapshot, and treasury status.
-
-**Key fields:** `wallet_id`, `schema_version`, `address`, `chain_ids`, `wallet_type`, `ens_name`, `owner_id`, `church_id`, `balance_snapshot`, `is_treasury`
-
----
-
-### `user_profile`
-A BibleFi user profile representing an individual participant, church administrator, auditor, developer, or observer. Links a user to their associated church, wallet addresses, preferred Bible translation, and notification preferences.
-
-**Key fields:** `user_id`, `schema_version`, `display_name`, `role`, `email`, `church_id`, `wallet_addresses`, `preferred_translation`, `notification_preferences`
-
----
-
-## Agentic Pipeline Schemas
-
-These schemas support the BibleFi hourly scripture-seeding pipeline. See [ARCHITECTURE.md](./ARCHITECTURE.md) for a full description of the multi-agent framework.
-
-### `agent_task`
-Specification for a single unit of work assigned to a BibleFi agent or subagent. Covers all five agent types in the pipeline: `master`, `scripture_search`, `language_validator`, `theological_validator`, and `dapp_seeder`. Each task references its parent run via `run_id` and its sandbox environment via `sandbox_id`.
-
-**Key fields:** `task_id`, `schema_version`, `agent_type`, `agent_id`, `parent_task_id`, `run_id`, `sandbox_id`, `status`, `input`, `output`, `error`
-
----
-
-### `agent_run_log`
-Records the outcome of a single hourly execution cycle. The master agent creates one `AgentRunLog` per run, updating it as each pipeline stage completes. Includes aggregate metrics such as `verses_scanned`, `scriptures_found`, `scriptures_seeded`, and stage-level status.
-
-**Key fields:** `run_id`, `schema_version`, `triggered_at`, `trigger_type`, `status`, `pipeline_stages`, `metrics`, `seed_batch_id`
-
----
-
-### `scripture_seed_batch`
-Represents the batch of financially-themed, fully-validated scripture records pushed to the BibleFi dApp by the `dapp_seeder` agent in a single cycle. Includes a reference to the upstream `AgentRunLog`, the list of `ScriptureRecord` UUIDs, and dApp endpoint response details.
-
-**Key fields:** `batch_id`, `schema_version`, `run_id`, `status`, `scripture_record_ids`, `financial_themes`, `translation`, `target_dapp`, `records_seeded`
-
----
-
-### `cross_language_validation`
-Result of cross-referencing a KJV passage with its original Hebrew, Greek, and/or Aramaic source texts. For each language, records the source text, transliteration, Strong's-referenced key terms, alignment score, and whether the financial theme is confirmed in the original language.
-
-**Key fields:** `validation_id`, `schema_version`, `scripture_record_id`, `english_reference`, `language_results`, `overall_status`, `validated_by_agent`, `validated_at`
-
----
-
-### `theological_validation`
-Result of consulting Biblical concordances (Strong's, Nave's, Young's) and dictionaries (Vine's, BDB, TDNT, Baker's) to confirm the theological accuracy and financial thematic alignment of a scripture. Assigns each passage a `dapp_category` for display in the BibleFi interface.
-
-**Key fields:** `validation_id`, `schema_version`, `scripture_record_id`, `cross_language_validation_id`, `concordance_references`, `dictionary_definitions`, `thematic_alignment`, `overall_status`
-
----
-
-## Usage
-
-### Validation Example (Node.js / Ajv)
+## Validation Example (Node.js / Ajv)
 
 ```js
-import Ajv from "ajv";
+import Ajv from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 import envelope from "./schemas/agent_envelope.schema.json" assert { type: "json" };
-import scriptureRecord from "./schemas/scripture_record.schema.json" assert { type: "json" };
 
 const ajv = new Ajv({ strict: true });
 addFormats(ajv);
 
-ajv.addSchema(scriptureRecord);
 const validate = ajv.compile(envelope);
 
 const payload = {
   envelope_id: "550e8400-e29b-41d4-a716-446655440000",
-  schema_version: "1.0.0",
+  schema_version: "2.0.0",
   created_at: "2024-01-01T00:00:00Z",
   payload_type: "scripture_record",
-  payload: {
-    record_id: "660e8400-e29b-41d4-a716-446655440001",
-    schema_version: "1.0.0",
-    book: "John",
-    chapter: 3,
-    verses: 16,
-    translation: { abbreviation: "KJV", full_name: "King James Version", language: "en" },
-    text: "For God so loved the world, that he gave his only begotten Son..."
-  }
+  payload: { record_id: "660e8400-e29b-41d4-a716-446655440001" }
 };
 
 const valid = validate(payload);
 if (!valid) console.error(validate.errors);
-```
-
-### Validation Example (Python / jsonschema)
-
-```python
-import json
-from jsonschema import validate
-from pathlib import Path
-
-schema_dir = Path("schemas")
-envelope = json.loads((schema_dir / "agent_envelope.schema.json").read_text())
-
-payload = {
-    "envelope_id": "550e8400-e29b-41d4-a716-446655440000",
-    "schema_version": "1.0.0",
-    "created_at": "2024-01-01T00:00:00Z",
-    "payload_type": "scripture_record",
-    "payload": {}
-}
-
-validate(instance=payload, schema=envelope)
 ```
 
 ---
@@ -187,7 +132,44 @@ See [VERSIONING.md](./VERSIONING.md) for the full versioning policy. In summary:
 | New optional field | MINOR (`1.x.0`) |
 | Breaking change | MAJOR (`x.0.0`) |
 
-Current schema versions are all at **`1.0.0`** for unchanged schemas; `agent_envelope` and `scripture_record` have been bumped to **`1.1.0`** with the addition of agentic pipeline support. The five new agentic pipeline schemas (`agent_task`, `agent_run_log`, `scripture_seed_batch`, `cross_language_validation`, `theological_validation`) are at **`1.0.0`**. See [VERSIONING.md](./VERSIONING.md) for the full version table.
+---
+
+## Documentation
+
+- [Schema Guide](docs/biblefi_schema_guide.md) — Full guide with examples, content hash computation, tithing flow, and Ajv validation
+- [Versioning Policy](VERSIONING.md) — Schema versioning, deprecation timelines, and migration notes including v1→v2 migration for `agent_envelope` and `scripture_record`
+- [Architecture](ARCHITECTURE.md) — Agentic pipeline architecture & scalability guide
+
+---
+
+## Security Notes
+
+### `security_context` Is Self-Asserted
+
+The `security_context` object in `agent_envelope` v2.0.0 carries classification and trust metadata (`classification`, `trust_level`, `sandboxed`, `requires_verification`). **These fields are self-asserted by the message sender and are not cryptographically enforced by the schema.**
+
+Consumers **MUST NOT** use `security_context` fields for access-control or authorization decisions without independent cryptographic verification. Verify the envelope `signature` against a trusted key registry and enforce trust boundaries using server-side policy engines. See `TRUST_BOUNDARIES.md` and `SANDBOXING_POLICY.md` in `Biblefi/BibleFi`.
+
+### `format` Keyword Is Advisory by Default
+
+JSON Schema `format` keywords (`format: uuid`, `format: uri`, `format: date-time`) are **annotation-only** by default in most validators. Enable format assertion explicitly:
+
+- **Ajv**: use `ajv-formats` and pass `{ formats: { ... } }` or use `mode: "full"`
+- **jsonschema (Python)**: pass `format_checker=FormatChecker()` to `validate()`
+
+### `signed_at` Is Client-Reported
+
+The `signature.signed_at` field is a self-reported timestamp. Do not use it alone for replay detection — combine with `expires_at`, server-side time validation, and nonce tracking.
+
+---
+
+## Biblical Foundation
+
+> *"Bring the whole tithe into the storehouse, that there may be food in my house."* — Malachi 3:10
+
+> *"Honor the Lord with your wealth, with the firstfruits of all your crops."* — Proverbs 3:9
+
+> *"Each of you should give what you have decided in your heart to give, not reluctantly or under compulsion, for God loves a cheerful giver."* — 2 Corinthians 9:7
 
 ---
 
@@ -197,7 +179,6 @@ Current schema versions are all at **`1.0.0`** for unchanged schemas; `agent_env
 2. Edit the relevant `.schema.json` file(s) under `schemas/`.
 3. Bump the `schema_version` field in the modified schemas according to [VERSIONING.md](./VERSIONING.md).
 4. Open a pull request with a clear description of the change and its rationale.
-5. Ensure the PR description references any related issues or BIPs (BibleFi Improvement Proposals).
 
 ---
 
