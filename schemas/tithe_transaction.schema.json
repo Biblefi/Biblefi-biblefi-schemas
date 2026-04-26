@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.biblefi.io/v1/tithe_transaction.schema.json",
+  "title": "TitheTransaction",
+  "description": "A record of a biblical giving transaction (tithe, offering, almsgiving, etc.) processed through the BibleFi protocol on Base chain. Fulfills Malachi 3:10: 'Bring the whole tithe into the storehouse.' Supports both manual and smart-contract-routed transactions.",
+  "type": "object",
+  "required": ["transaction_id","schema_version","sender_wallet","recipient_wallet","amount_wei","asset","chain_id","transaction_type","scripture_reference"],
+  "additionalProperties": false,
+  "properties": {
+    "transaction_id": { "type": "string", "format": "uuid", "description": "Globally unique identifier for this transaction (UUID v4). NOTE: format:uuid is an assertion in validators that enforce formats (e.g. Ajv with ajv-formats); treat as annotation-only in validators that do not." },
+    "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$", "examples": ["1.0.0"], "description": "Semantic version of the TitheTransaction schema used. Must be 1.x.x for documents validated against this schema ($id v1)." },
+    "sender_wallet": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$", "description": "EVM wallet address of the giver on Base chain (chain_id: 8453)." },
+    "sender_user_id": { "type": "string", "format": "uuid", "description": "Links to user_profile record (UUID v4)." },
+    "sender_church_id": { "type": "string", "format": "uuid", "description": "Links to church_record if this is a church-to-church tithe (UUID v4)." },
+    "recipient_wallet": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$", "description": "EVM wallet address of the recipient church, ministry, or protocol treasury on Base chain." },
+    "recipient_church_id": { "type": "string", "format": "uuid", "description": "Links to recipient church_record (UUID v4)." },
+    "amount_wei": { "type": "string", "pattern": "^\\d+$", "description": "Amount in wei (uint256 as string to avoid JavaScript precision loss). Convert: amount_wei / 10^decimals = token amount." },
+    "amount_usd": { "type": "number", "minimum": 0, "description": "USD equivalent at time of transaction (informational only; not used for on-chain settlement)." },
+    "asset": {
+      "type": "object",
+      "required": ["symbol", "contract_address", "chain_id", "decimals"],
+      "additionalProperties": false,
+      "description": "Token asset used for this giving transaction.",
+      "properties": {
+        "symbol": { "type": "string", "minLength": 1, "examples": ["USDC","ETH","WETH","BFI"], "description": "Token symbol." },
+        "contract_address": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$", "description": "ERC-20 token contract address. Use zero address (0x0000000000000000000000000000000000000000) for native ETH." },
+        "chain_id": { "type": "integer", "minimum": 1, "description": "EVM chain ID for this asset. BibleFi primary chain = Base mainnet (8453)." },
+        "decimals": { "type": "integer", "minimum": 0, "maximum": 18, "description": "Token decimal places." },
+        "coingecko_id": { "type": "string", "description": "CoinGecko asset ID for price lookups (informational)." }
+      }
+    },
+    "chain_id": { "type": "integer", "minimum": 1, "description": "EVM chain ID for this transaction. BibleFi primary chain = Base mainnet (8453)." },
+    "tx_hash": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$", "description": "On-chain transaction hash (32-byte hex). Only present after the transaction is confirmed on-chain." },
+    "block_number": { "type": "integer", "minimum": 0, "description": "Block number at which the transaction was confirmed." },
+    "transaction_type": {
+      "type": "string",
+      "enum": ["tithe","firstfruits","offering","almsgiving","missions_gift","building_fund","emergency_relief","scholarship"],
+      "description": "Biblical category of giving. tithe = 10% of income per Malachi 3:10. firstfruits = first portion per Proverbs 3:9-10. offering = freewill gift per 2 Corinthians 9:7."
+    },
+    "scripture_reference": {
+      "type": "object",
+      "required": ["book", "chapter", "verses"],
+      "additionalProperties": false,
+      "description": "Scripture backing this giving transaction. Recommended: Malachi 3:10 for tithes, Proverbs 3:9 for firstfruits, 2 Corinthians 9:7 for offerings.",
+      "properties": {
+        "book": { "type": "string", "minLength": 1, "description": "Canonical book name (e.g. 'Malachi', 'Proverbs', '2 Corinthians')." },
+        "chapter": { "type": "integer", "minimum": 1, "description": "Chapter number." },
+        "verses": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1, "description": "Single verse number." },
+            { "type": "array", "items": { "type": "integer", "minimum": 1 }, "minItems": 1, "uniqueItems": true, "description": "Array of individual verse numbers." },
+            { "type": "object", "required": ["from", "to"], "additionalProperties": false, "description": "Inclusive verse range.", "properties": { "from": { "type": "integer", "minimum": 1 }, "to": { "type": "integer", "minimum": 1 } } }
+          ]
+        },
+        "notes": { "type": "string", "description": "Optional notes about this scripture reference." }
+      }
+    },
+    "percentage_of_income": { "type": "number", "minimum": 0, "maximum": 100, "description": "If provided, the percentage of income this transaction represents (e.g. 10.0 = traditional tithe per Malachi 3:10)." },
+    "is_recurring": { "type": "boolean", "default": false, "description": "Whether this is part of a recurring giving schedule." },
+    "recurrence_interval": { "type": "string", "enum": ["weekly","biweekly","monthly","quarterly","annually"], "description": "Interval for recurring giving. Only meaningful when is_recurring is true." },
+    "giving_strategy_id": { "type": "string", "format": "uuid", "description": "Links to a defi_strategy record if this tithe comes from yield generated by a BibleFi DeFi strategy (UUID v4)." },
+    "smart_contract_routed": { "type": "boolean", "default": false, "description": "Whether this transaction was routed via a BibleFi smart contract on Base chain." },
+    "contract_address": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$", "description": "BibleFi tithe router or splitter contract address on Base chain (if smart_contract_routed is true)." },
+    "attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chain_id", "contract_address", "attestation_type"],
+      "description": "On-chain attestation record for this giving transaction. Use attestation_type: eas_attestation for EAS on Base chain.",
+      "properties": {
+        "chain_id": { "type": "integer", "minimum": 1, "description": "EVM chain ID for the attestation." },
+        "contract_address": { "type": "string", "pattern": "^0x[0-9a-fA-F]{40}$", "description": "Attestation contract address." },
+        "token_id": { "type": "string", "description": "Token ID for NFT/SBT attestations." },
+        "tx_hash": { "type": "string", "pattern": "^0x[0-9a-fA-F]{64}$", "description": "Attestation transaction hash." },
+        "attestation_type": { "type": "string", "enum": ["nft_mint","eas_attestation","hypercert","poap","sbt","merkle_leaf","farcaster_frame","custom"], "description": "Type of on-chain attestation." },
+        "block_number": { "type": "integer", "minimum": 0, "description": "Block number at which attestation was confirmed." },
+        "ipfs_cid": { "type": "string", "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|bafy[a-z2-7]{55})$", "description": "IPFS CID for off-chain attestation data (CIDv0 or CIDv1)." },
+        "attested_at": { "type": "string", "format": "date-time", "description": "ISO 8601 UTC timestamp when the attestation was created." },
+        "attested_by": { "type": "string", "description": "Identifier of the attesting agent or contract." }
+      }
+    },
+    "notes": { "type": "string", "description": "Optional free-form notes about this giving transaction." },
+    "tags": { "type": "array", "uniqueItems": true, "items": { "type": "string" }, "description": "Optional free-form tags for filtering and indexing." },
+    "created_at": { "type": "string", "format": "date-time", "description": "ISO 8601 UTC timestamp when this record was created." },
+    "updated_at": { "type": "string", "format": "date-time", "description": "ISO 8601 UTC timestamp when this record was last updated." }
+  }
+}
